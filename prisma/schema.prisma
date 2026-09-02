@@ -1,0 +1,171 @@
+// UNN Research portal — Users, Researchers, Research, and Equipment
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Portal staff accounts (super-admin dashboard)
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  DIRECTOR
+  OFFICER
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+}
+
+model User {
+  id           String        @id @default(cuid())
+  reference    String?       @unique
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         UserRole      @default(OFFICER)
+  status       AccountStatus @default(PENDING)
+  unit         String?
+  lastActiveAt DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("users")
+}
+
+// Faculty, fellows, and postgraduate investigators (home-page signups only)
+model Researcher {
+  id           String        @id @default(cuid())
+  reference    String?       @unique
+  name         String
+  email        String        @unique
+  passwordHash String?
+  faculty      String
+  status       AccountStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  custodianEquipment Equipment[] @relation("EquipmentCustodian")
+
+  @@map("researchers")
+}
+
+enum ResearchStatus {
+  ACTIVE
+  RECRUITING
+  UNDER_REVIEW
+  COMPLETED
+}
+
+enum ResearchOutputType {
+  ARTICLES
+  PAPERS
+  JOURNAL
+  PATENTS_INNOVATION
+}
+
+model Research {
+  id                     String             @id @default(cuid())
+  reference              String?            @unique
+  title                  String
+  abstract               String             @db.Text
+  startDate              DateTime           @db.Date
+  endDate                DateTime           @db.Date
+  researchArea           String
+  facultyCenterInstitute String
+  department             String
+  researchOutput         ResearchOutputType @default(ARTICLES)
+  funding                String
+  status                 ResearchStatus     @default(UNDER_REVIEW)
+  principalResearcherName  String
+  principalResearcherEmail String?
+  createdAt                DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  coResearchers  ResearchCoResearcher[]
+  collaborators  ResearchCollaborator[]
+  equipmentLinks ResearchEquipment[]
+
+  @@index([status])
+  @@map("research")
+}
+
+model ResearchCoResearcher {
+  id         String  @id @default(cuid())
+  researchId String
+  name       String
+  email      String?
+  sortOrder  Int     @default(0)
+
+  research Research @relation(fields: [researchId], references: [id], onDelete: Cascade)
+
+  @@index([researchId])
+  @@map("research_co_researchers")
+}
+
+model ResearchCollaborator {
+  id         String  @id @default(cuid())
+  researchId String
+  name       String
+  email      String?
+  sortOrder  Int     @default(0)
+
+  research Research @relation(fields: [researchId], references: [id], onDelete: Cascade)
+
+  @@index([researchId])
+  @@map("research_collaborators")
+}
+
+enum EquipmentCondition {
+  AVAILABLE
+  IN_USE
+  UNDER_REPAIR
+  DAMAGED
+}
+
+enum EquipmentAvailability {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+}
+
+model Equipment {
+  id               String                @id @default(cuid())
+  reference        String?               @unique
+  name             String
+  model            String?
+  make             String?
+  lab              String?
+  location         String?
+  condition        EquipmentCondition    @default(AVAILABLE)
+  availability     EquipmentAvailability @default(AVAILABLE)
+  availabilityNote String?
+  custodianId      String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  custodian     Researcher?         @relation("EquipmentCustodian", fields: [custodianId], references: [id], onDelete: SetNull)
+  researchLinks ResearchEquipment[]
+
+  @@index([availability])
+  @@map("equipment")
+}
+
+model ResearchEquipment {
+  researchId  String
+  equipmentId String
+  condition   EquipmentCondition @default(AVAILABLE)
+  notes       String?
+
+  research  Research  @relation(fields: [researchId], references: [id], onDelete: Cascade)
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@id([researchId, equipmentId])
+  @@map("research_equipment")
+}
