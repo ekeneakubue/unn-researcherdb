@@ -1,16 +1,25 @@
 import { UsersTable } from "@/components/admin/users-table";
+import { ServiceErrorHost } from "@/components/service-error-host";
 import { getAssignableRoleLabels } from "@/lib/auth/session";
 import { requireStaffSession } from "@/lib/auth/require-staff";
 import { getAdminUsers } from "@/lib/users";
+import { runSafe } from "@/lib/safe-server";
 
 export default async function AdminUsersPage() {
   const session = await requireStaffSession();
-  const users = await getAdminUsers(session.role);
+  const { data: users, errors } = await runSafe(
+    "Users",
+    () => getAdminUsers(session.role),
+    [],
+  );
 
   return (
-    <UsersTable
-      initialUsers={users}
-      assignableRoles={[...getAssignableRoleLabels(session.role)]}
-    />
+    <>
+      <UsersTable
+        initialUsers={users}
+        assignableRoles={[...getAssignableRoleLabels(session.role)]}
+      />
+      <ServiceErrorHost errors={errors} />
+    </>
   );
 }

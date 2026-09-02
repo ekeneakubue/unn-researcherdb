@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { loginResearcherAction } from "@/app/actions/researcher-auth";
+import { useServiceErrors } from "@/components/use-service-errors";
 
 export function ResearcherLoginForm() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -16,11 +17,10 @@ export function ResearcherLoginForm() {
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
 
-    setError(null);
     startTransition(async () => {
       const result = await loginResearcherAction({ email, password });
       if (!result.ok) {
-        setError(result.error);
+        reportError(new Error(result.error), "Sign in");
         return;
       }
       router.replace(result.redirectTo);
@@ -59,12 +59,6 @@ export function ResearcherLoginForm() {
           />
         </label>
 
-        {error ? (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-            {error}
-          </p>
-        ) : null}
-
         <button
           type="submit"
           disabled={isPending}
@@ -86,6 +80,7 @@ export function ResearcherLoginForm() {
           Staff sign in
         </Link>
       </p>
+      {errorModal}
     </div>
   );
 }

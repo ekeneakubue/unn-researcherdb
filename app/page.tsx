@@ -4,13 +4,25 @@ import { Hero } from "@/components/hero";
 import { Navbar } from "@/components/navbar";
 import { ResearchCards } from "@/components/research-cards";
 import { ResearcherCta } from "@/components/researcher-cta";
+import { ServiceErrorHost } from "@/components/service-error-host";
 import { getHomeEquipmentItems, getHomeResearchProjects } from "@/lib/home";
+import { runSafeAll } from "@/lib/safe-server";
 
 export default async function Home() {
-  const [projects, equipment] = await Promise.all([
-    getHomeResearchProjects(),
-    getHomeEquipmentItems(),
-  ]);
+  const { results, errors } = await runSafeAll([
+    {
+      label: "Research projects",
+      run: getHomeResearchProjects,
+      fallback: [],
+    },
+    {
+      label: "Equipment",
+      run: getHomeEquipmentItems,
+      fallback: [],
+    },
+  ] as const);
+
+  const [projects, equipment] = results;
 
   return (
     <>
@@ -28,6 +40,7 @@ export default async function Home() {
         <ResearcherCta />
       </main>
       <Footer />
+      <ServiceErrorHost errors={errors} />
     </>
   );
 }

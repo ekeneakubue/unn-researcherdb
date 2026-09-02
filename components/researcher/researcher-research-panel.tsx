@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { createResearcherResearchAction } from "@/app/actions/researcher/research";
 import { AddResearchModal } from "@/components/admin/add-research-modal";
 import { researchStatusStyles, StatusBadge } from "@/components/admin/status-badge";
+import { useServiceErrors } from "@/components/use-service-errors";
 import type { ResearcherProjectRow } from "@/lib/researcher-dashboard-shared";
 
 const statuses = ["All", "Active", "Recruiting", "Under review", "Completed"] as const;
@@ -25,7 +26,7 @@ export function ResearcherResearchPanel({
   const [status, setStatus] = useState<(typeof statuses)[number]>("All");
   const [projects, setProjects] = useState(initialProjects);
   const [adding, setAdding] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { reportErrors, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
   const modalDefaults = useMemo(
@@ -67,12 +68,6 @@ export function ResearcherResearchPanel({
           Add research
         </button>
       </div>
-
-      {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-          {error}
-        </p>
-      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
@@ -138,30 +133,32 @@ export function ResearcherResearchPanel({
         defaults={modalDefaults}
         lockPrincipalResearcher
         onCreate={(research) => {
-          setError(null);
           startTransition(async () => {
-            try {
-              const created = await createResearcherResearchAction(research);
-              setProjects((current) => [
-                {
-                  id: created.id,
-                  title: created.title,
-                  faculty: created.faculty,
-                  department: created.unit,
-                  role: "Principal",
-                  status: created.status,
-                  year: created.year,
-                  funding: created.funding,
-                },
-                ...current,
-              ]);
-              setAdding(false);
-            } catch {
-              setError("Could not create research. Please try again.");
+            const result = await createResearcherResearchAction(research);
+            if (!result.ok) {
+              reportErrors(result.errors);
+              return;
             }
+
+            const created = result.data;
+            setProjects((current) => [
+              {
+                id: created.id,
+                title: created.title,
+                faculty: created.faculty,
+                department: created.unit,
+                role: "Principal",
+                status: created.status,
+                year: created.year,
+                funding: created.funding,
+              },
+              ...current,
+            ]);
+            setAdding(false);
           });
         }}
       />
+      {errorModal}
     </div>
   );
 }

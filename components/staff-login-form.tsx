@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { loginStaffAction } from "@/app/actions/staff-auth";
+import { useServiceErrors } from "@/components/use-service-errors";
 
 export function StaffLoginForm() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -15,11 +16,10 @@ export function StaffLoginForm() {
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
 
-    setError(null);
     startTransition(async () => {
       const result = await loginStaffAction({ email, password });
       if (!result.ok) {
-        setError(result.error);
+        reportError(new Error(result.error), "Sign in");
         return;
       }
       router.replace(result.redirectTo);
@@ -58,12 +58,6 @@ export function StaffLoginForm() {
           />
         </label>
 
-        {error ? (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-            {error}
-          </p>
-        ) : null}
-
         <button
           type="submit"
           disabled={isPending}
@@ -72,6 +66,7 @@ export function StaffLoginForm() {
           {isPending ? "Signing in…" : "Sign in"}
         </button>
       </form>
+      {errorModal}
     </div>
   );
 }

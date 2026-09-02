@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { registerResearcherAction } from "@/app/actions/researcher-signup";
+import { useServiceErrors } from "@/components/use-service-errors";
 
 const emptyForm = {
   name: "",
@@ -16,12 +17,11 @@ export function ResearcherCta() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [error, setError] = useState<string | null>(null);
+  const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
 
     startTransition(async () => {
       const result = await registerResearcherAction({
@@ -32,7 +32,7 @@ export function ResearcherCta() {
       });
 
       if (!result.ok) {
-        setError(result.error);
+        reportError(new Error(result.error), "Create account");
         return;
       }
 
@@ -79,11 +79,6 @@ export function ResearcherCta() {
 
             <div className="border-t border-white/10 bg-black/15 p-8 sm:p-12 lg:border-l lg:border-t-0">
               <form className="space-y-4" onSubmit={handleSubmit}>
-                {error ? (
-                  <p className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-100 ring-1 ring-red-300/30">
-                    {error}
-                  </p>
-                ) : null}
                 <div>
                   <label htmlFor="full-name" className="text-sm font-medium">
                     Full name
@@ -184,6 +179,7 @@ export function ResearcherCta() {
           </div>
         </div>
       </div>
+      {errorModal}
     </section>
   );
 }

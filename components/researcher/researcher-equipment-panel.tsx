@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { updateResearcherEquipmentAction } from "@/app/actions/researcher/equipment";
 import { availabilityStyles, StatusBadge } from "@/components/admin/status-badge";
 import { EditEquipmentModal } from "@/components/researcher/edit-equipment-modal";
+import { useServiceErrors } from "@/components/use-service-errors";
 import type { UpdateResearcherEquipmentInput } from "@/lib/equipment-shared";
 import type { ResearcherEquipmentRow } from "@/lib/researcher-dashboard-shared";
 
@@ -14,7 +15,7 @@ export function ResearcherEquipmentPanel({ items: initialItems }: { items: Resea
   const [availability, setAvailability] = useState<(typeof availabilities)[number]>("All");
   const [items, setItems] = useState(initialItems);
   const [editing, setEditing] = useState<ResearcherEquipmentRow | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { reportErrors, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
   const rows = useMemo(() => {
@@ -35,16 +36,15 @@ export function ResearcherEquipmentPanel({ items: initialItems }: { items: Resea
   function handleSave(input: UpdateResearcherEquipmentInput) {
     if (!editing) return;
 
-    setError(null);
     startTransition(async () => {
       const result = await updateResearcherEquipmentAction(editing.id, input);
       if (!result.ok) {
-        setError(result.error);
+        reportErrors(result.errors);
         return;
       }
 
       setItems((current) =>
-        current.map((item) => (item.id === result.item.id ? result.item : item)),
+        current.map((item) => (item.id === result.data.id ? result.data : item)),
       );
       setEditing(null);
     });
@@ -55,12 +55,6 @@ export function ResearcherEquipmentPanel({ items: initialItems }: { items: Resea
       <p className="max-w-2xl text-sm text-unn-muted">
         Instruments you custodian or equipment registered on your research projects.
       </p>
-
-      {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-          {error}
-        </p>
-      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
@@ -146,6 +140,7 @@ export function ResearcherEquipmentPanel({ items: initialItems }: { items: Resea
         onSave={handleSave}
         saving={isPending}
       />
+      {errorModal}
     </div>
   );
 }

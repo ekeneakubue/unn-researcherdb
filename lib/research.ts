@@ -208,6 +208,20 @@ export async function updateAdminResearchStatus(
   return toAdminResearchDetail(research);
 }
 
+export async function deleteAdminResearch(identifier: string): Promise<boolean> {
+  const existing = await prisma.research.findFirst({
+    where: {
+      OR: [{ reference: identifier }, { id: identifier }],
+    },
+    select: { id: true },
+  });
+
+  if (!existing) return false;
+
+  await prisma.research.delete({ where: { id: existing.id } });
+  return true;
+}
+
 export async function createAdminResearch(
   input: CreateAdminResearchInput,
 ): Promise<AdminResearchRow> {

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { deleteResearcherAction } from "@/app/actions/admin/researchers";
+import { useServiceErrors } from "@/components/use-service-errors";
 import type { AdminResearcherRow } from "@/lib/researchers-shared";
 
 type ResearchersTableProps = {
@@ -12,7 +13,7 @@ export function ResearchersTable({ initialResearchers }: ResearchersTableProps) 
   const [query, setQuery] = useState("");
   const [researchers, setResearchers] = useState(initialResearchers);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
   const rows = useMemo(() => {
@@ -34,14 +35,13 @@ export function ResearchersTable({ initialResearchers }: ResearchersTableProps) 
     );
     if (!confirmed) return;
 
-    setError(null);
     setDeletingId(person.id);
 
     startTransition(async () => {
       const result = await deleteResearcherAction(person.id);
 
       if (!result.ok) {
-        setError(result.error);
+        reportError(new Error(result.error), "Delete researcher");
         setDeletingId(null);
         return;
       }
@@ -65,12 +65,6 @@ export function ResearchersTable({ initialResearchers }: ResearchersTableProps) 
           Invite researcher
         </button>
       </div>
-
-      {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-          {error}
-        </p>
-      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
@@ -123,6 +117,7 @@ export function ResearchersTable({ initialResearchers }: ResearchersTableProps) 
           </p>
         ) : null}
       </div>
+      {errorModal}
     </div>
   );
 }

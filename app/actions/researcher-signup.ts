@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { setResearcherSession } from "@/lib/auth/researcher-session";
 import { Prisma } from "@/lib/generated/prisma/client";
+import { toServiceError } from "@/lib/service-error";
 import { createResearcherAccount } from "@/lib/researchers";
 import type { ResearcherSignupInput } from "@/lib/researchers-shared";
 import { revalidateAdminSections } from "@/lib/revalidate-admin";
@@ -56,7 +57,7 @@ export async function registerResearcherAction(
 
     return {
       ok: false,
-      error: "Could not create your account. Please try again.",
+      error: toServiceError(error, "Create account").message,
     };
   }
 }

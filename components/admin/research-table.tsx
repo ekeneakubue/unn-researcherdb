@@ -1,19 +1,27 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { createResearchAction, getResearchDetailAction, updateResearchStatusAction } from "@/app/actions/admin/research";
+import { createResearchAction, deleteResearchAction, getResearchDetailAction, updateResearchStatusAction } from "@/app/actions/admin/research";
 import { AddResearchModal } from "@/components/admin/add-research-modal";
+import { ResearchCsvToolbar } from "@/components/admin/research-csv-toolbar";
 import { ResearchDetailModal } from "@/components/admin/research-detail-modal";
 import { researchStatusStyles, StatusBadge } from "@/components/admin/status-badge";
+import { useServiceErrors } from "@/components/use-service-errors";
 import type { AdminResearchDetail, AdminResearchRow, ResearchStatusLabel } from "@/lib/research-shared";
 
 const statuses = ["All", "Active", "Recruiting", "Under review", "Completed"] as const;
 
 type ResearchTableProps = {
   initialProjects: AdminResearchRow[];
+  showCsvImport?: boolean;
+  showDelete?: boolean;
 };
 
-export function ResearchTable({ initialProjects }: ResearchTableProps) {
+export function ResearchTable({
+  initialProjects,
+  showCsvImport = false,
+  showDelete = false,
+}: ResearchTableProps) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<(typeof statuses)[number]>("All");
   const [projects, setProjects] = useState(initialProjects);
@@ -22,28 +30,38 @@ export function ResearchTable({ initialProjects }: ResearchTableProps) {
   const [detail, setDetail] = useState<AdminResearchDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [statusSaving, setStatusSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { reportErrors, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
   async function openDetails(projectId: string) {
     setViewingId(projectId);
     setDetail(null);
     setDetailLoading(true);
-    setError(null);
 
-    try {
-      const result = await getResearchDetailAction(projectId);
-      setDetail(result);
-      if (!result) {
-        setError("Could not load project details.");
-        setViewingId(null);
-      }
-    } catch {
-      setError("Could not load project details.");
+    const result = await getResearchDetailAction(projectId);
+    setDetailLoading(false);
+
+    if (!result.ok) {
+      reportErrors(result.errors);
       setViewingId(null);
-    } finally {
-      setDetailLoading(false);
+      return;
     }
+
+    if (!result.data) {
+      reportErrors([
+        {
+          label: "Project details",
+          title: "Not found",
+          message: "This project could not be found.",
+          retryable: false,
+        },
+      ]);
+      setViewingId(null);
+      return;
+    }
+
+    setDetail(result.data);
   }
 
   function closeDetails() {
@@ -57,26 +75,58 @@ export function ResearchTable({ initialProjects }: ResearchTableProps) {
     if (!detail) return;
 
     setStatusSaving(true);
-    setError(null);
 
-    try {
-      const updated = await updateResearchStatusAction(detail.id, nextStatus);
-      if (!updated) {
-        setError("Could not update project status.");
+    const result = await updateResearchStatusAction(detail.id, nextStatus);
+    setStatusSaving(false);
+
+    if (!result.ok) {
+      reportErrors(result.errors);
+      return;
+    }
+
+    if (!result.data) {
+      reportErrors([
+        {
+          label: "Update status",
+          title: "Not found",
+          message: "This project could not be found.",
+          retryable: false,
+        },
+      ]);
+      return;
+    }
+
+    setDetail(result.data);
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === result.data!.id ? { ...project, status: result.data!.status } : project,
+      ),
+    );
+  }
+
+  function handleDelete(project: AdminResearchRow) {
+    const confirmed = window.confirm(
+      `Delete "${project.title}"? This removes the project record and cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingId(project.id);
+    startTransition(async () => {
+      const result = await deleteResearchAction(project.id);
+
+      if (!result.ok) {
+        reportErrors(result.errors);
+        setDeletingId(null);
         return;
       }
 
-      setDetail(updated);
-      setProjects((current) =>
-        current.map((project) =>
-          project.id === updated.id ? { ...project, status: updated.status } : project,
-        ),
-      );
-    } catch {
-      setError("Could not update project status.");
-    } finally {
-      setStatusSaving(false);
-    }
+      if (viewingId === project.id) {
+        closeDetails();
+      }
+
+      setProjects((current) => current.filter((item) => item.id !== project.id));
+      setDeletingId(null);
+    });
   }
 
   const rows = useMemo(() => {
@@ -99,21 +149,25 @@ export function ResearchTable({ initialProjects }: ResearchTableProps) {
         <p className="max-w-xl text-sm text-unn-muted">
           Catalogue, funding source, and review status for campus projects.
         </p>
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          disabled={isPending}
-          className="rounded-full bg-unn-green px-4 py-2 text-sm font-semibold text-white hover:bg-unn-green-mid disabled:opacity-60"
-        >
-          Add research
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {showCsvImport ? (
+            <ResearchCsvToolbar
+              disabled={isPending}
+              onImported={(imported) =>
+                setProjects((current) => [...imported, ...current])
+              }
+            />
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            disabled={isPending}
+            className="rounded-full bg-unn-green px-4 py-2 text-sm font-semibold text-white hover:bg-unn-green-mid disabled:opacity-60"
+          >
+            Add research
+          </button>
+        </div>
       </div>
-
-      {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-          {error}
-        </p>
-      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
@@ -164,14 +218,27 @@ export function ResearchTable({ initialProjects }: ResearchTableProps) {
                   <StatusBadge label={project.status} styles={researchStatusStyles} />
                 </td>
                 <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => openDetails(project.id)}
-                    disabled={detailLoading && viewingId === project.id}
-                    className="rounded-full border border-unn-green/20 px-3 py-1.5 text-xs font-semibold text-unn-green hover:bg-unn-cream disabled:opacity-60"
-                  >
-                    View details
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openDetails(project.id)}
+                      disabled={detailLoading && viewingId === project.id}
+                      className="rounded-full border border-unn-green/20 px-3 py-1.5 text-xs font-semibold text-unn-green hover:bg-unn-cream disabled:opacity-60"
+                    >
+                      View details
+                    </button>
+                    {showDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(project)}
+                        disabled={isPending && deletingId === project.id}
+                        aria-label={`Delete ${project.title}`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-red-600 hover:bg-red-50 disabled:opacity-60"
+                      >
+                        <TrashIcon />
+                      </button>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -195,18 +262,33 @@ export function ResearchTable({ initialProjects }: ResearchTableProps) {
         open={adding}
         onClose={() => setAdding(false)}
         onCreate={(research) => {
-          setError(null);
           startTransition(async () => {
-            try {
-              const created = await createResearchAction(research);
-              setProjects((current) => [created, ...current]);
-              setAdding(false);
-            } catch {
-              setError("Could not create research project. Please try again.");
+            const result = await createResearchAction(research);
+            if (!result.ok) {
+              reportErrors(result.errors);
+              return;
             }
+            setProjects((current) => [result.data, ...current]);
+            setAdding(false);
           });
         }}
       />
+      {errorModal}
     </div>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+      <path
+        d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7h12z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }

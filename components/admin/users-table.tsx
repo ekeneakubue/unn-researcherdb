@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { createUserAction } from "@/app/actions/admin/users";
 import { AddUserModal } from "@/components/admin/add-user-modal";
 import { researcherStatusStyles, StatusBadge } from "@/components/admin/status-badge";
+import { useServiceErrors } from "@/components/use-service-errors";
 import type { AdminUser } from "@/lib/admin-data";
 
 const statuses = ["All", "Active", "Pending", "Suspended"] as const;
@@ -18,7 +19,7 @@ export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
   const [status, setStatus] = useState<(typeof statuses)[number]>("All");
   const [users, setUsers] = useState(initialUsers);
   const [adding, setAdding] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
   const rows = useMemo(() => {
@@ -51,12 +52,6 @@ export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
           Add user
         </button>
       </div>
-
-      {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-          {error}
-        </p>
-      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
@@ -117,11 +112,10 @@ export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
         onClose={() => setAdding(false)}
         assignableRoles={assignableRoles}
         onCreate={(user) => {
-          setError(null);
           startTransition(async () => {
             const result = await createUserAction(user);
             if (!result.ok) {
-              setError(result.error);
+              reportError(new Error(result.error), "Create user");
               return;
             }
             setUsers((current) => [result.user, ...current]);
@@ -129,6 +123,7 @@ export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
           });
         }}
       />
+      {errorModal}
     </div>
   );
 }
