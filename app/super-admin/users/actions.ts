@@ -1,1 +1,1 @@
-export { createUserAction } from "@/app/actions/admin/users";
+export { createUserAction, updateUserAction } from "@/app/actions/admin/users";

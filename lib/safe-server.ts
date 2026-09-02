@@ -1,6 +1,6 @@
 import "server-only";
 
-import { toServiceError, type ServiceErrorPayload } from "@/lib/service-error";
+import { logServiceFailure, toServiceError, type ServiceErrorPayload } from "@/lib/service-error";
 
 export async function runSafe<T>(
   label: string,
@@ -10,7 +10,9 @@ export async function runSafe<T>(
   try {
     return { data: await fn(), errors: [] };
   } catch (error) {
-    console.error(`[${label}]`, error);
+    // Log as a plain string — passing Error objects to console.error during RSC
+    // can surface as minified React #441 in the Next.js overlay even when caught.
+    logServiceFailure(label, error);
     return { data: fallback, errors: [toServiceError(error, label)] };
   }
 }
@@ -24,7 +26,7 @@ export async function runSafeAll<T extends readonly SafeTask[]>(
       try {
         return await task.run();
       } catch (error) {
-        console.error(`[${task.label}]`, error);
+        logServiceFailure(task.label, error);
         errors.push(toServiceError(error, task.label));
         return task.fallback;
       }

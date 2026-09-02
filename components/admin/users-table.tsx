@@ -1,24 +1,32 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { createUserAction } from "@/app/actions/admin/users";
+import { createUserAction, updateUserAction } from "@/app/actions/admin/users";
 import { AddUserModal } from "@/components/admin/add-user-modal";
+import { EditUserModal } from "@/components/admin/edit-user-modal";
 import { researcherStatusStyles, StatusBadge } from "@/components/admin/status-badge";
 import { useServiceErrors } from "@/components/use-service-errors";
 import type { AdminUser } from "@/lib/admin-data";
+import type { UpdateAdminUserInput } from "@/lib/users-shared";
 
 const statuses = ["All", "Active", "Pending", "Suspended"] as const;
 
 type UsersTableProps = {
   initialUsers: AdminUser[];
   assignableRoles: string[];
+  showEdit?: boolean;
 };
 
-export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
+export function UsersTable({
+  initialUsers,
+  assignableRoles,
+  showEdit = false,
+}: UsersTableProps) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<(typeof statuses)[number]>("All");
   const [users, setUsers] = useState(initialUsers);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<AdminUser | null>(null);
   const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
 
@@ -36,6 +44,23 @@ export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
       return matchesStatus && matchesQuery;
     });
   }, [query, status, users]);
+
+  function handleSave(input: UpdateAdminUserInput) {
+    if (!editing) return;
+
+    startTransition(async () => {
+      const result = await updateUserAction(editing.id, input);
+      if (!result.ok) {
+        reportError(new Error(result.error), "Update user");
+        return;
+      }
+
+      setUsers((current) =>
+        current.map((user) => (user.id === result.user.id ? result.user : user)),
+      );
+      setEditing(null);
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -82,6 +107,7 @@ export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
               <th className="px-4 py-3 font-medium">Role</th>
               <th className="px-4 py-3 font-medium">Last active</th>
               <th className="px-4 py-3 font-medium">Status</th>
+              {showEdit ? <th className="px-4 py-3 font-medium">Actions</th> : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-unn-green/8">
@@ -98,6 +124,19 @@ export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
                 <td className="px-4 py-3">
                   <StatusBadge label={user.status} styles={researcherStatusStyles} />
                 </td>
+                {showEdit ? (
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(user)}
+                      disabled={isPending}
+                      aria-label={`Edit ${user.name}`}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-unn-green hover:bg-unn-cream disabled:opacity-60"
+                    >
+                      <EditIcon />
+                    </button>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -123,7 +162,33 @@ export function UsersTable({ initialUsers, assignableRoles }: UsersTableProps) {
           });
         }}
       />
+
+      {showEdit ? (
+        <EditUserModal
+          open={editing !== null}
+          user={editing}
+          assignableRoles={assignableRoles}
+          saving={isPending}
+          onClose={() => setEditing(null)}
+          onSave={handleSave}
+        />
+      ) : null}
+
       {errorModal}
     </div>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+      <path
+        d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3ZM13.5 7.5l3 3"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

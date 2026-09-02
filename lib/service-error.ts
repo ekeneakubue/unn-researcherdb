@@ -42,6 +42,12 @@ function isConnectionIssue(error: unknown, message: string): boolean {
   );
 }
 
+function summarizeMessage(message: string, max = 240): string {
+  const singleLine = message.replace(/\s+/g, " ").trim();
+  if (singleLine.length <= max) return singleLine;
+  return `${singleLine.slice(0, max).trimEnd()}…`;
+}
+
 export function toServiceError(error: unknown, label = "Request"): ServiceErrorPayload {
   const message = readErrorMessage(error);
   const connectionIssue = isConnectionIssue(error, message);
@@ -52,8 +58,21 @@ export function toServiceError(error: unknown, label = "Request"): ServiceErrorP
     title: connectionIssue ? "Connection lost" : "Something went wrong",
     message: connectionIssue
       ? "We couldn't reach the database. Check your internet connection and try again."
-      : message,
-    detail: connectionIssue ? message : code ? `Error code: ${code}` : undefined,
+      : summarizeMessage(message),
+    detail: connectionIssue
+      ? code
+        ? `Error code: ${code}`
+        : "The database server did not respond."
+      : code
+        ? `Error code: ${code}`
+        : undefined,
     retryable: connectionIssue || code === "P2024",
   };
+}
+
+/** Avoid logging Error objects during RSC — Next.js may treat them as unhandled. */
+export function logServiceFailure(label: string, error: unknown) {
+  const code = readErrorCode(error);
+  const message = summarizeMessage(readErrorMessage(error), 180);
+  console.warn(`[${label}] ${code ? `${code}: ` : ""}${message}`);
 }

@@ -10,9 +10,16 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
+  const connectionString = process.env.DATABASE_URL;
   const pool =
     globalForPrisma.pool ??
-    new pg.Pool({ connectionString: process.env.DATABASE_URL });
+    new pg.Pool({
+      connectionString,
+      // Neon pooler: fail fast so pages can show the connection modal instead of hanging.
+      connectionTimeoutMillis: 8_000,
+      idleTimeoutMillis: 20_000,
+      max: 5,
+    });
 
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.pool = pool;

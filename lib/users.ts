@@ -3,6 +3,9 @@ import type { AdminUser, AdminUserStatus } from "@/lib/admin-data";
 import { getAssignableRoleLabels } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import type { UpdateAdminUserInput } from "@/lib/users-shared";
+
+export type { UpdateAdminUserInput } from "@/lib/users-shared";
 
 const roleLabels: Record<UserRole, string> = {
   SUPER_ADMIN: "Super-admin",
@@ -126,6 +129,64 @@ export async function createAdminUser(
       passwordHash: hashPassword(input.password),
       role: resolvedRole,
       status: statusValues[input.status],
+    },
+  });
+
+  return toAdminUser(user);
+}
+
+export async function updateAdminUser(
+  identifier: string,
+  input: UpdateAdminUserInput,
+  callerRole: UserRole,
+): Promise<AdminUser> {
+  const existing = await prisma.user.findFirst({
+    where: {
+      OR: [{ reference: identifier }, { id: identifier }],
+    },
+  });
+
+  if (!existing) {
+    throw new Error("User not found.");
+  }
+
+  if (existing.role === "SUPER_ADMIN" && callerRole !== "SUPER_ADMIN") {
+    throw new Error("Forbidden: you cannot edit super-admin accounts.");
+  }
+
+  const assignableRoles = getAssignableRoleLabels(callerRole);
+  const roleOptions =
+    existing.role === "SUPER_ADMIN" && !assignableRoles.includes("Super-admin")
+      ? [...assignableRoles, "Super-admin"]
+      : assignableRoles;
+
+  if (!roleOptions.includes(input.role)) {
+    throw new Error("Forbidden: you cannot assign this role.");
+  }
+
+  const resolvedRole = roleValues[input.role as keyof typeof roleValues];
+  if (!resolvedRole) {
+    throw new Error("Invalid role.");
+  }
+
+  if (resolvedRole === "SUPER_ADMIN" && callerRole !== "SUPER_ADMIN") {
+    throw new Error("Forbidden: only super-admins can assign the super-admin role.");
+  }
+
+  const password = input.password?.trim();
+  if (password && password.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+
+  const user = await prisma.user.update({
+    where: { id: existing.id },
+    data: {
+      name: input.name.trim(),
+      email: input.email.trim().toLowerCase(),
+      unit: input.unit.trim() || null,
+      role: resolvedRole,
+      status: statusValues[input.status],
+      ...(password ? { passwordHash: hashPassword(password) } : {}),
     },
   });
 

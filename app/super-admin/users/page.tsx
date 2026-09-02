@@ -18,6 +18,7 @@ export default async function SuperAdminUsersPage() {
       <UsersTable
         initialUsers={users}
         assignableRoles={[...getAssignableRoleLabels(session.role)]}
+        showEdit
       />
       <ServiceErrorHost errors={errors} />
     </>
