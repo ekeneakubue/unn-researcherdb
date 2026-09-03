@@ -8,7 +8,7 @@ export default async function SuperAdminResearchersPage() {
 
   return (
     <>
-      <ResearchersTable initialResearchers={researchers} />
+      <ResearchersTable initialResearchers={researchers} showEdit />
       <ServiceErrorHost errors={errors} />
     </>
   );

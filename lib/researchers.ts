@@ -1,11 +1,32 @@
 import "server-only";
 
-import type { Researcher } from "@/lib/generated/prisma/client";
+import type { AccountStatus, Researcher } from "@/lib/generated/prisma/client";
+import type { AdminUserStatus } from "@/lib/admin-data";
 import { hashPassword } from "@/lib/password";
-import type { AdminResearcherRow, ResearcherSignupInput } from "@/lib/researchers-shared";
+import type {
+  AdminResearcherRow,
+  ResearcherSignupInput,
+  UpdateAdminResearcherInput,
+} from "@/lib/researchers-shared";
 import { prisma } from "@/lib/prisma";
 
-export type { AdminResearcherRow, ResearcherSignupInput } from "@/lib/researchers-shared";
+export type {
+  AdminResearcherRow,
+  ResearcherSignupInput,
+  UpdateAdminResearcherInput,
+} from "@/lib/researchers-shared";
+
+const statusLabels: Record<AccountStatus, AdminUserStatus> = {
+  ACTIVE: "Active",
+  PENDING: "Pending",
+  SUSPENDED: "Suspended",
+};
+
+const statusValues: Record<AdminUserStatus, AccountStatus> = {
+  Active: "ACTIVE",
+  Pending: "PENDING",
+  Suspended: "SUSPENDED",
+};
 
 function normalizeName(name: string) {
   return name.trim().toLowerCase();
@@ -51,6 +72,7 @@ export function toAdminResearcherRow(
     email: researcher.email,
     faculty: researcher.faculty,
     projects: projectCounts.get(normalizeName(researcher.name)) ?? 0,
+    status: statusLabels[researcher.status],
   };
 }
 
@@ -110,4 +132,38 @@ export async function deleteAdminResearcher(identifier: string): Promise<boolean
 
   await prisma.researcher.delete({ where: { id: researcher.id } });
   return true;
+}
+
+export async function updateAdminResearcher(
+  identifier: string,
+  input: UpdateAdminResearcherInput,
+): Promise<AdminResearcherRow> {
+  const existing = await prisma.researcher.findFirst({
+    where: {
+      OR: [{ reference: identifier }, { id: identifier }],
+    },
+  });
+
+  if (!existing) {
+    throw new Error("Researcher not found.");
+  }
+
+  const password = input.password?.trim();
+  if (password && password.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+
+  const researcher = await prisma.researcher.update({
+    where: { id: existing.id },
+    data: {
+      name: input.name.trim(),
+      email: input.email.trim().toLowerCase(),
+      faculty: input.faculty.trim(),
+      status: statusValues[input.status],
+      ...(password ? { passwordHash: hashPassword(password) } : {}),
+    },
+  });
+
+  const projectCounts = await buildProjectCounts([researcher.name]);
+  return toAdminResearcherRow(researcher, projectCounts);
 }

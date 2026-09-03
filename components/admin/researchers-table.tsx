@@ -1,17 +1,26 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { deleteResearcherAction } from "@/app/actions/admin/researchers";
+import {
+  deleteResearcherAction,
+  updateResearcherAction,
+} from "@/app/actions/admin/researchers";
+import { EditResearcherModal } from "@/components/admin/edit-researcher-modal";
 import { useServiceErrors } from "@/components/use-service-errors";
-import type { AdminResearcherRow } from "@/lib/researchers-shared";
+import type { AdminResearcherRow, UpdateAdminResearcherInput } from "@/lib/researchers-shared";
 
 type ResearchersTableProps = {
   initialResearchers: AdminResearcherRow[];
+  showEdit?: boolean;
 };
 
-export function ResearchersTable({ initialResearchers }: ResearchersTableProps) {
+export function ResearchersTable({
+  initialResearchers,
+  showEdit = false,
+}: ResearchersTableProps) {
   const [query, setQuery] = useState("");
   const [researchers, setResearchers] = useState(initialResearchers);
+  const [editing, setEditing] = useState<AdminResearcherRow | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
@@ -28,6 +37,25 @@ export function ResearchersTable({ initialResearchers }: ResearchersTableProps) 
         person.id.toLowerCase().includes(needle),
     );
   }, [query, researchers]);
+
+  function handleSave(input: UpdateAdminResearcherInput) {
+    if (!editing) return;
+
+    startTransition(async () => {
+      const result = await updateResearcherAction(editing.id, input);
+      if (!result.ok) {
+        reportError(new Error(result.error), "Update researcher");
+        return;
+      }
+
+      setResearchers((current) =>
+        current.map((person) =>
+          person.id === result.researcher.id ? result.researcher : person,
+        ),
+      );
+      setEditing(null);
+    });
+  }
 
   function handleDelete(person: AdminResearcherRow) {
     const confirmed = window.confirm(
@@ -98,14 +126,27 @@ export function ResearchersTable({ initialResearchers }: ResearchersTableProps) 
                 <td className="px-4 py-3">{person.faculty}</td>
                 <td className="px-4 py-3">{person.projects}</td>
                 <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(person)}
-                    disabled={isPending && deletingId === person.id}
-                    className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
-                  >
-                    {isPending && deletingId === person.id ? "Deleting…" : "Delete"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {showEdit ? (
+                      <button
+                        type="button"
+                        onClick={() => setEditing(person)}
+                        disabled={isPending}
+                        aria-label={`Edit ${person.name}`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-unn-green hover:bg-unn-cream disabled:opacity-60"
+                      >
+                        <EditIcon />
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(person)}
+                      disabled={isPending && deletingId === person.id}
+                      className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      {isPending && deletingId === person.id ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -117,7 +158,32 @@ export function ResearchersTable({ initialResearchers }: ResearchersTableProps) 
           </p>
         ) : null}
       </div>
+
+      {showEdit ? (
+        <EditResearcherModal
+          open={editing !== null}
+          researcher={editing}
+          saving={isPending}
+          onClose={() => setEditing(null)}
+          onSave={handleSave}
+        />
+      ) : null}
+
       {errorModal}
     </div>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+      <path
+        d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3ZM13.5 7.5l3 3"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
