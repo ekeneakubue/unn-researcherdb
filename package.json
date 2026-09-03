@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/ensure-local-next-cache.cjs",
     "dev": "prisma generate && next dev",
+    "prebuild": "node scripts/ensure-local-next-cache.cjs",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
