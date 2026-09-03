@@ -10,8 +10,8 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /**
- * pg v8 treats sslmode=require/prefer/verify-ca as verify-full and warns that
- * future versions will change that. Neon works with explicit verify-full.
+ * Keep Neon-compatible sslmode=require. pg v8 warns about the alias; uselibpqcompat
+ * preserves current semantics without forcing verify-full (which can fail on serverless).
  */
 function normalizeDatabaseUrl(connectionString: string | undefined) {
   if (!connectionString) return connectionString;
@@ -19,8 +19,11 @@ function normalizeDatabaseUrl(connectionString: string | undefined) {
   try {
     const url = new URL(connectionString);
     const mode = url.searchParams.get("sslmode");
-    if (mode === "require" || mode === "prefer" || mode === "verify-ca") {
-      url.searchParams.set("sslmode", "verify-full");
+    if (
+      (mode === "require" || mode === "prefer" || mode === "verify-ca") &&
+      !url.searchParams.has("uselibpqcompat")
+    ) {
+      url.searchParams.set("uselibpqcompat", "true");
     }
     return url.toString();
   } catch {
@@ -50,6 +53,4 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.prisma = prisma;

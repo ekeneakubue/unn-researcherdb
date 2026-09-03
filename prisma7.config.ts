@@ -5,8 +5,11 @@ function normalizeDatabaseUrl(connectionString: string) {
   try {
     const url = new URL(connectionString);
     const mode = url.searchParams.get("sslmode");
-    if (mode === "require" || mode === "prefer" || mode === "verify-ca") {
-      url.searchParams.set("sslmode", "verify-full");
+    if (
+      (mode === "require" || mode === "prefer" || mode === "verify-ca") &&
+      !url.searchParams.has("uselibpqcompat")
+    ) {
+      url.searchParams.set("uselibpqcompat", "true");
     }
     return url.toString();
   } catch {

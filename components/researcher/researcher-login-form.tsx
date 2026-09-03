@@ -18,13 +18,17 @@ export function ResearcherLoginForm() {
     const password = String(formData.get("password") ?? "");
 
     startTransition(async () => {
-      const result = await loginResearcherAction({ email, password });
-      if (!result.ok) {
-        reportError(new Error(result.error), "Sign in");
-        return;
+      try {
+        const result = await loginResearcherAction({ email, password });
+        if (!result.ok) {
+          reportError(new Error(result.error), "Sign in");
+          return;
+        }
+        router.replace(result.redirectTo);
+        router.refresh();
+      } catch (error) {
+        reportError(error, "Sign in");
       }
-      router.replace(result.redirectTo);
-      router.refresh();
     });
   }
 

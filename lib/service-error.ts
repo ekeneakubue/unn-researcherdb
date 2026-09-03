@@ -25,6 +25,12 @@ function readErrorMessage(error: unknown): string {
   return "An unexpected error occurred.";
 }
 
+function isMinifiedReactRenderError(error: unknown, message: string): boolean {
+  if (/Minified React error #441/i.test(message)) return true;
+  if (/error occurred in the Server Components render/i.test(message)) return true;
+  return isRecord(error) && typeof error.digest === "string";
+}
+
 function isConnectionIssue(error: unknown, message: string): boolean {
   const code = readErrorCode(error);
   if (code && ["P1001", "P1002", "P1008", "P1017"].includes(code)) return true;
@@ -52,6 +58,15 @@ export function toServiceError(error: unknown, label = "Request"): ServiceErrorP
   const message = readErrorMessage(error);
   const connectionIssue = isConnectionIssue(error, message);
   const code = readErrorCode(error);
+
+  if (isMinifiedReactRenderError(error, message)) {
+    return {
+      label,
+      title: "This page could not load",
+      message: "Something went wrong while loading this page. Try again in a moment.",
+      retryable: true,
+    };
+  }
 
   return {
     label,

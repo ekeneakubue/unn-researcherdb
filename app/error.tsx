@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { ServiceErrorModal } from "@/components/service-error-modal";
-import { toServiceError } from "@/lib/service-error";
+import { logServiceFailure, toServiceError } from "@/lib/service-error";
 
 export default function GlobalError({
   error,
@@ -16,7 +16,7 @@ export default function GlobalError({
   const serviceError = toServiceError(error, "Page");
 
   useEffect(() => {
-    console.error(error);
+    logServiceFailure("Page", error);
   }, [error]);
 
   function handleRetry() {
