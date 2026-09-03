@@ -1,4 +1,10 @@
-import type { HomeEquipmentItem } from "@/lib/home-shared";
+"use client";
+
+import { useState } from "react";
+import { getHomeEquipmentDetailAction } from "@/app/actions/home";
+import { HomeEquipmentDetailModal } from "@/components/home-equipment-detail-modal";
+import { useServiceErrors } from "@/components/use-service-errors";
+import type { HomeEquipmentDetail, HomeEquipmentItem } from "@/lib/home-shared";
 
 const badgeStyles: Record<string, string> = {
   Available: "bg-emerald-100 text-emerald-800",
@@ -11,6 +17,47 @@ type EquipmentSectionProps = {
 };
 
 export function EquipmentSection({ items }: EquipmentSectionProps) {
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<HomeEquipmentDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const { reportErrors, errorModal } = useServiceErrors();
+
+  async function openDetails(equipmentId: string) {
+    setViewingId(equipmentId);
+    setDetail(null);
+    setDetailLoading(true);
+
+    const result = await getHomeEquipmentDetailAction(equipmentId);
+    setDetailLoading(false);
+
+    if (!result.ok) {
+      reportErrors(result.errors);
+      setViewingId(null);
+      return;
+    }
+
+    if (!result.data) {
+      reportErrors([
+        {
+          label: "Equipment details",
+          title: "Not found",
+          message: "This equipment could not be found.",
+          retryable: false,
+        },
+      ]);
+      setViewingId(null);
+      return;
+    }
+
+    setDetail(result.data);
+  }
+
+  function closeDetails() {
+    setViewingId(null);
+    setDetail(null);
+    setDetailLoading(false);
+  }
+
   return (
     <section id="equipment" className="scroll-mt-32 bg-white py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -48,12 +95,28 @@ export function EquipmentSection({ items }: EquipmentSectionProps) {
                 </div>
                 <p className="mt-2 text-sm font-medium text-unn-green">{item.lab}</p>
                 <p className="mt-1 text-sm text-unn-muted">{item.location}</p>
-                <p className="mt-4 text-sm text-unn-ink/80">{item.window}</p>
+                <p className="mt-4 flex-1 text-sm text-unn-ink/80">{item.window}</p>
+                <button
+                  type="button"
+                  onClick={() => openDetails(item.id)}
+                  disabled={detailLoading && viewingId === item.id}
+                  className="mt-4 self-start rounded-full border border-unn-green/20 px-3 py-1.5 text-xs font-semibold text-unn-green hover:bg-white disabled:opacity-60"
+                >
+                  View details
+                </button>
               </article>
             ))}
           </div>
         )}
       </div>
+
+      <HomeEquipmentDetailModal
+        open={viewingId !== null}
+        loading={detailLoading}
+        detail={detail}
+        onClose={closeDetails}
+      />
+      {errorModal}
     </section>
   );
 }

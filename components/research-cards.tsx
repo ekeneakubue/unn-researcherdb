@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { HomeResearchProject } from "@/lib/home-shared";
+import { getHomeResearchDetailAction } from "@/app/actions/home";
+import { HomeResearchDetailModal } from "@/components/home-research-detail-modal";
+import { useServiceErrors } from "@/components/use-service-errors";
+import type { HomeResearchDetail, HomeResearchProject } from "@/lib/home-shared";
 
 type ResearchCardsProps = {
   projects: HomeResearchProject[];
@@ -14,6 +17,10 @@ export function ResearchCards({ projects }: ResearchCardsProps) {
   }, [projects]);
 
   const [faculty, setFaculty] = useState("All");
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<HomeResearchDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const { reportErrors, errorModal } = useServiceErrors();
 
   const visible = useMemo(
     () =>
@@ -22,6 +29,42 @@ export function ResearchCards({ projects }: ResearchCardsProps) {
         : projects.filter((project) => project.faculty === faculty),
     [faculty, projects],
   );
+
+  async function openDetails(projectId: string) {
+    setViewingId(projectId);
+    setDetail(null);
+    setDetailLoading(true);
+
+    const result = await getHomeResearchDetailAction(projectId);
+    setDetailLoading(false);
+
+    if (!result.ok) {
+      reportErrors(result.errors);
+      setViewingId(null);
+      return;
+    }
+
+    if (!result.data) {
+      reportErrors([
+        {
+          label: "Research details",
+          title: "Not found",
+          message: "This project could not be found.",
+          retryable: false,
+        },
+      ]);
+      setViewingId(null);
+      return;
+    }
+
+    setDetail(result.data);
+  }
+
+  function closeDetails() {
+    setViewingId(null);
+    setDetail(null);
+    setDetailLoading(false);
+  }
 
   return (
     <section id="research" className="scroll-mt-32 py-20">
@@ -93,11 +136,27 @@ export function ResearchCards({ projects }: ResearchCardsProps) {
                     {project.unit}
                   </span>
                 </p>
+                <button
+                  type="button"
+                  onClick={() => openDetails(project.id)}
+                  disabled={detailLoading && viewingId === project.id}
+                  className="mt-4 self-start rounded-full border border-unn-green/20 px-3 py-1.5 text-xs font-semibold text-unn-green hover:bg-unn-cream disabled:opacity-60"
+                >
+                  View details
+                </button>
               </article>
             ))}
           </div>
         )}
       </div>
+
+      <HomeResearchDetailModal
+        open={viewingId !== null}
+        loading={detailLoading}
+        detail={detail}
+        onClose={closeDetails}
+      />
+      {errorModal}
     </section>
   );
 }
