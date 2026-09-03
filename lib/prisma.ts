@@ -9,8 +9,27 @@ const globalForPrisma = globalThis as unknown as {
   pool: pg.Pool | undefined;
 };
 
+/**
+ * pg v8 treats sslmode=require/prefer/verify-ca as verify-full and warns that
+ * future versions will change that. Neon works with explicit verify-full.
+ */
+function normalizeDatabaseUrl(connectionString: string | undefined) {
+  if (!connectionString) return connectionString;
+
+  try {
+    const url = new URL(connectionString);
+    const mode = url.searchParams.get("sslmode");
+    if (mode === "require" || mode === "prefer" || mode === "verify-ca") {
+      url.searchParams.set("sslmode", "verify-full");
+    }
+    return url.toString();
+  } catch {
+    return connectionString;
+  }
+}
+
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL);
   const pool =
     globalForPrisma.pool ??
     new pg.Pool({

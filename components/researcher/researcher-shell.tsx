@@ -81,11 +81,11 @@ export function ResearcherSidebar() {
       ) : null}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-unn-green text-white transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh w-64 flex-col bg-unn-green text-white transition-transform lg:translate-x-0 ${
           open ? "translate-x-0" : "max-lg:-translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+        <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-5 py-5">
           <UnnCrest className="h-10 w-auto" />
           <div>
             <p className="font-serif text-lg leading-tight">UNN Research</p>
@@ -95,7 +95,10 @@ export function ResearcherSidebar() {
           </div>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Researcher dashboard">
+        <nav
+          className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3"
+          aria-label="Researcher dashboard"
+        >
           {nav.map((item) => {
             const active =
               item.segment === ""
@@ -119,7 +122,7 @@ export function ResearcherSidebar() {
           })}
         </nav>
 
-        <div className="border-t border-white/10 p-4 text-xs text-white/70">
+        <div className="shrink-0 border-t border-white/10 p-4 text-xs text-white/70">
           <p className="font-medium text-white">{profile.name}</p>
           <p className="mt-1">{profile.faculty}</p>
           {profile.reference ? (

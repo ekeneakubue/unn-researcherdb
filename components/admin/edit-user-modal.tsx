@@ -58,11 +58,16 @@ export function EditUserModal({
   const passwordId = useId();
   const [form, setForm] = useState(emptyForm);
   const [showPassword, setShowPassword] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const roleOptions =
     user?.role === "Super-admin" && !assignableRoles.includes("Super-admin")
       ? [...assignableRoles, "Super-admin"]
       : assignableRoles;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -77,7 +82,7 @@ export function EditUserModal({
 
     setShowPassword(false);
     if (dialog.open) dialog.close();
-  }, [open, user, assignableRoles]);
+  }, [open, user, assignableRoles, mounted]);
 
   function handleBackdropClick(event: React.MouseEvent<HTMLDialogElement>) {
     if (event.target === event.currentTarget) onClose();
@@ -97,6 +102,9 @@ export function EditUserModal({
       password: form.password.trim() || undefined,
     });
   }
+
+  // Avoid SSR/hydration mismatch from native <dialog>.
+  if (!mounted) return null;
 
   return (
     <dialog

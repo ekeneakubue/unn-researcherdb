@@ -20,10 +20,10 @@ export function AdminLayout({
     <AdminPortalProvider variant={variant} staffUser={staffUser}>
       <AdminMenuProvider>
         <div className="flex min-h-full flex-1 bg-unn-cream">
-          <Suspense fallback={<div className="hidden w-64 bg-unn-green lg:block" />}>
+          <Suspense fallback={<div className="hidden w-64 shrink-0 bg-unn-green lg:block" />}>
             <AdminSidebar />
           </Suspense>
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
             <Suspense
               fallback={
                 <header className="h-[4.25rem] border-b border-unn-green/10 bg-unn-cream" />
