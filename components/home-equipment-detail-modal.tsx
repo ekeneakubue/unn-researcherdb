@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { availabilityStyles, StatusBadge } from "@/components/admin/status-badge";
 import type { HomeEquipmentDetail } from "@/lib/home-shared";
 
@@ -19,6 +19,11 @@ export function HomeEquipmentDetailModal({
 }: HomeEquipmentDetailModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -29,11 +34,14 @@ export function HomeEquipmentDetailModal({
     } else if (dialog.open) {
       dialog.close();
     }
-  }, [open]);
+  }, [open, mounted]);
 
   function handleBackdropClick(event: React.MouseEvent<HTMLDialogElement>) {
     if (event.target === event.currentTarget) onClose();
   }
+
+  // Avoid SSR/hydration mismatch from native <dialog> (same pattern as ServiceErrorHost).
+  if (!mounted || !open) return null;
 
   return (
     <dialog
