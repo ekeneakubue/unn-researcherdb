@@ -47,6 +47,7 @@ model Researcher {
   email        String        @unique
   passwordHash String?
   faculty      String
+  department   String?
   status       AccountStatus @default(ACTIVE)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -143,6 +144,8 @@ model Equipment {
   make             String?
   lab              String?
   location         String?
+  contactPerson    String?
+  contactPhone     String?
   condition        EquipmentCondition    @default(AVAILABLE)
   availability     EquipmentAvailability @default(AVAILABLE)
   availabilityNote String?
@@ -168,4 +171,40 @@ model ResearchEquipment {
 
   @@id([researchId, equipmentId])
   @@map("research_equipment")
+}
+
+// Catalog for researcher signup / profile faculty & department selects
+enum FacultyUnitType {
+  FACULTY
+  CENTER
+  INSTITUTE
+  SCHOOL
+  COLLEGE
+  ADMINISTRATION
+}
+
+model Faculty {
+  id        String          @id @default(cuid())
+  name      String          @unique
+  type      FacultyUnitType @default(FACULTY)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  departments Department[]
+
+  @@map("faculties")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  facultyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  faculty Faculty @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+
+  @@unique([facultyId, name])
+  @@index([facultyId])
+  @@map("departments")
 }

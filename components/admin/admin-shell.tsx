@@ -11,6 +11,8 @@ import { getAdminNav, getAdminPageTitle } from "@/lib/admin-portal-config";
 const navIcons = {
   "": OverviewIcon,
   users: UsersIcon,
+  faculties: FacultiesIcon,
+  departments: DepartmentsIcon,
   research: ResearchIcon,
   equipments: EquipmentIcon,
   researchers: PeopleIcon,
@@ -165,6 +167,39 @@ function UsersIcon() {
       <circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.6" />
       <path
         d="M5 19.5c.8-3.4 3.5-5.5 7-5.5s6.2 2.1 7 5.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function FacultiesIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <path
+        d="M3 20h18M5 20V10l7-5 7 5v10M9 20v-5h6v5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function DepartmentsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <path
+        d="M4 7h16M4 12h16M4 17h10"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"
         stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"

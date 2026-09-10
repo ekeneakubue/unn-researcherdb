@@ -32,6 +32,10 @@ export function ResearcherProfilePanel({ profile }: { profile: ResearcherProfile
             <dd className="mt-1 text-sm text-unn-ink">{profile.faculty}</dd>
           </div>
           <div>
+            <dt className="text-xs uppercase tracking-wider text-unn-muted">Department</dt>
+            <dd className="mt-1 text-sm text-unn-ink">{profile.department || "—"}</dd>
+          </div>
+          <div>
             <dt className="text-xs uppercase tracking-wider text-unn-muted">Member since</dt>
             <dd className="mt-1 text-sm text-unn-ink">{profile.memberSince}</dd>
           </div>

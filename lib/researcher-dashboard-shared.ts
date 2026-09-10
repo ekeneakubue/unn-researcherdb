@@ -29,6 +29,7 @@ export type ResearcherProfile = {
   name: string;
   email: string;
   faculty: string;
+  department: string;
   status: string;
   memberSince: string;
 };

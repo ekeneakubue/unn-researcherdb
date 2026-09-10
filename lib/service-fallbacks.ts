@@ -26,6 +26,7 @@ export function researcherProfileFallback(session: ResearcherSession): Researche
     name: session.name,
     email: session.email,
     faculty: session.faculty,
+    department: "",
     status: "—",
     memberSince: "—",
   };

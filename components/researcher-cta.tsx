@@ -2,23 +2,40 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { registerResearcherAction } from "@/app/actions/researcher-signup";
 import { useServiceErrors } from "@/components/use-service-errors";
+import {
+  departmentsForFaculty,
+  type FacultyCatalog,
+} from "@/lib/faculties-shared";
 
 const emptyForm = {
   name: "",
   email: "",
   faculty: "",
+  department: "",
   password: "",
 };
 
-export function ResearcherCta() {
+const selectClass =
+  "mt-1.5 h-11 w-full rounded-xl border border-white/15 bg-white/8 px-3 text-sm outline-none focus:border-unn-gold [&>option]:bg-unn-green [&>option]:text-white";
+
+type ResearcherCtaProps = {
+  catalog: FacultyCatalog;
+};
+
+export function ResearcherCta({ catalog }: ResearcherCtaProps) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
+
+  const departments = useMemo(
+    () => departmentsForFaculty(catalog, form.faculty),
+    [catalog, form.faculty],
+  );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,6 +45,7 @@ export function ResearcherCta() {
         name: form.name.trim(),
         email: form.email.trim(),
         faculty: form.faculty.trim(),
+        department: form.department.trim(),
         password: form.password,
       });
 
@@ -114,19 +132,54 @@ export function ResearcherCta() {
                 </div>
                 <div>
                   <label htmlFor="faculty" className="text-sm font-medium">
-                    Faculty / department
+                    Faculty
                   </label>
-                  <input
+                  <select
                     id="faculty"
                     name="faculty"
                     required
                     value={form.faculty}
                     onChange={(event) =>
-                      setForm((current) => ({ ...current, faculty: event.target.value }))
+                      setForm((current) => ({
+                        ...current,
+                        faculty: event.target.value,
+                        department: "",
+                      }))
                     }
-                    className="mt-1.5 h-11 w-full rounded-xl border border-white/15 bg-white/8 px-3 text-sm outline-none placeholder:text-white/40 focus:border-unn-gold"
-                    placeholder="Faculty of Agriculture"
-                  />
+                    className={selectClass}
+                  >
+                    <option value="">Select faculty</option>
+                    {catalog.faculties.map((faculty) => (
+                      <option key={faculty} value={faculty}>
+                        {faculty}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="department" className="text-sm font-medium">
+                    Department
+                  </label>
+                  <select
+                    id="department"
+                    name="department"
+                    required
+                    disabled={!form.faculty}
+                    value={form.department}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, department: event.target.value }))
+                    }
+                    className={`${selectClass} disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    <option value="">
+                      {form.faculty ? "Select department" : "Select a faculty first"}
+                    </option>
+                    {departments.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="password" className="text-sm font-medium">

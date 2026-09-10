@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "FacultyUnitType" ADD VALUE 'ADMINISTRATION';

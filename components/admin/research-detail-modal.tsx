@@ -142,6 +142,8 @@ export function ResearchDetailModal({
                           <DetailField label="Equipment name" value={item.name} className="sm:col-span-2" />
                           <DetailField label="Model" value={item.model || "—"} />
                           <DetailField label="Make" value={item.make || "—"} />
+                          <DetailField label="Contact person" value={item.contactPerson || "—"} />
+                          <DetailField label="Contact phone no" value={item.contactPhone || "—"} />
                           <DetailField label="Location/Ownership" value={item.location || "—"} />
                           <DetailField label="Condition" value={item.condition} />
                         </dl>

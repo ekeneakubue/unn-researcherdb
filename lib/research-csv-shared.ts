@@ -17,6 +17,8 @@ export const RESEARCH_CSV_COLUMNS = [
   "equipment_name",
   "equipment_model",
   "equipment_make",
+  "equipment_contact_person",
+  "equipment_contact_phone",
   "equipment_location",
   "equipment_condition",
 ] as const;
@@ -167,6 +169,8 @@ export function buildResearchCsvTemplate(): string {
     "Scanning Electron Microscope",
     "JSM-IT500",
     "JEOL",
+    "Dr. Ada Okeke",
+    "+234 803 000 0000",
     "Central Research Laboratory",
     "Available",
   ].map(escapeCsvCell);

@@ -21,6 +21,8 @@ export type NewResearch = {
     name: string;
     model: string;
     make: string;
+    contactPerson: string;
+    contactPhone: string;
     location: string;
     condition: "Available" | "In-use" | "Under-repair" | "Damaged";
   };
@@ -57,6 +59,8 @@ export type AdminResearchDetail = {
     name: string;
     model: string;
     make: string;
+    contactPerson: string;
+    contactPhone: string;
     location: string;
     condition: string;
   }>;

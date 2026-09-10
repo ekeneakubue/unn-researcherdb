@@ -157,6 +157,8 @@ function parseResearchRow(
         name: record.equipment_name.trim(),
         model: record.equipment_model.trim(),
         make: record.equipment_make.trim(),
+        contactPerson: record.equipment_contact_person.trim(),
+        contactPhone: record.equipment_contact_phone.trim(),
         location: record.equipment_location.trim(),
         condition: equipmentCondition,
       },

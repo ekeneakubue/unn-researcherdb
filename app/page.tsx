@@ -5,8 +5,15 @@ import { Navbar } from "@/components/navbar";
 import { ResearchCards } from "@/components/research-cards";
 import { ResearcherCta } from "@/components/researcher-cta";
 import { ServiceErrorHost } from "@/components/service-error-host";
+import { getFacultyCatalog } from "@/lib/faculties";
+import type { FacultyCatalog } from "@/lib/faculties-shared";
 import { getHomeEquipmentItems, getHomeResearchProjects } from "@/lib/home";
 import { runSafeAll } from "@/lib/safe-server";
+
+const emptyCatalog: FacultyCatalog = {
+  faculties: [],
+  departmentsByFaculty: {},
+};
 
 export default async function Home() {
   const { results, errors } = await runSafeAll([
@@ -20,9 +27,14 @@ export default async function Home() {
       run: getHomeEquipmentItems,
       fallback: [],
     },
+    {
+      label: "Faculties",
+      run: getFacultyCatalog,
+      fallback: emptyCatalog,
+    },
   ] as const);
 
-  const [projects, equipment] = results;
+  const [projects, equipment, catalog] = results;
 
   return (
     <>
@@ -37,7 +49,7 @@ export default async function Home() {
         <Hero />
         <ResearchCards projects={projects} />
         <EquipmentSection items={equipment} />
-        <ResearcherCta />
+        <ResearcherCta catalog={catalog} />
       </main>
       <Footer />
       <ServiceErrorHost errors={errors} />

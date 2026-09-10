@@ -141,6 +141,8 @@ export async function getHomeResearchDetail(
       name: link.equipment.name,
       model: link.equipment.model ?? "",
       make: link.equipment.make ?? "",
+      contactPerson: link.equipment.contactPerson ?? "",
+      contactPhone: link.equipment.contactPhone ?? "",
       location: link.equipment.location ?? "",
       condition: equipmentConditionLabels[link.condition],
     })),

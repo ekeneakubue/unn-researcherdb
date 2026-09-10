@@ -160,6 +160,7 @@ export async function getResearcherProfile(
     name: researcher.name,
     email: researcher.email,
     faculty: researcher.faculty,
+    department: researcher.department ?? "",
     status: accountStatusLabels[researcher.status],
     memberSince: researcher.createdAt.toLocaleDateString("en-NG", {
       day: "numeric",

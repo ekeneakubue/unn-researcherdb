@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { AdminUserStatus } from "@/lib/admin-data";
+import {
+  departmentsForFaculty,
+  type FacultyCatalog,
+} from "@/lib/faculties-shared";
 import type { AdminResearcherRow, UpdateAdminResearcherInput } from "@/lib/researchers-shared";
 
 const statuses: AdminUserStatus[] = ["Active", "Pending", "Suspended"];
@@ -9,6 +13,7 @@ const statuses: AdminUserStatus[] = ["Active", "Pending", "Suspended"];
 type EditResearcherModalProps = {
   open: boolean;
   researcher: AdminResearcherRow | null;
+  catalog: FacultyCatalog;
   saving?: boolean;
   onClose: () => void;
   onSave: (input: UpdateAdminResearcherInput) => void;
@@ -19,6 +24,7 @@ function emptyForm() {
     name: "",
     email: "",
     faculty: "",
+    department: "",
     status: "Active" as AdminUserStatus,
     password: "",
   };
@@ -29,6 +35,7 @@ function toForm(researcher: AdminResearcherRow) {
     name: researcher.name,
     email: researcher.email,
     faculty: researcher.faculty,
+    department: researcher.department,
     status: researcher.status,
     password: "",
   };
@@ -37,6 +44,7 @@ function toForm(researcher: AdminResearcherRow) {
 export function EditResearcherModal({
   open,
   researcher,
+  catalog,
   saving = false,
   onClose,
   onSave,
@@ -47,6 +55,21 @@ export function EditResearcherModal({
   const [form, setForm] = useState(emptyForm);
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  const departments = useMemo(() => {
+    const listed = departmentsForFaculty(catalog, form.faculty);
+    if (form.department && !listed.includes(form.department)) {
+      return [form.department, ...listed];
+    }
+    return listed;
+  }, [catalog, form.faculty, form.department]);
+
+  const facultyOptions = useMemo(() => {
+    if (form.faculty && !catalog.faculties.includes(form.faculty)) {
+      return [form.faculty, ...catalog.faculties];
+    }
+    return catalog.faculties;
+  }, [catalog.faculties, form.faculty]);
 
   useEffect(() => {
     setMounted(true);
@@ -79,12 +102,12 @@ export function EditResearcherModal({
       name: form.name.trim(),
       email: form.email.trim(),
       faculty: form.faculty.trim(),
+      department: form.department.trim(),
       status: form.status,
       password: form.password.trim() || undefined,
     });
   }
 
-  // Avoid SSR/hydration mismatch from native <dialog>.
   if (!mounted) return null;
 
   return (
@@ -139,16 +162,47 @@ export function EditResearcherModal({
             />
           </label>
           <label className="block text-sm sm:col-span-2">
-            Faculty / department
-            <input
+            Faculty
+            <select
               required
               value={form.faculty}
               onChange={(event) =>
-                setForm((current) => ({ ...current, faculty: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  faculty: event.target.value,
+                  department: "",
+                }))
               }
-              className="mt-1.5 h-11 w-full rounded-xl border border-unn-green/15 px-3 text-sm outline-none focus:border-unn-gold"
-              placeholder="Faculty of Agriculture"
-            />
+              className="mt-1.5 h-11 w-full rounded-xl border border-unn-green/15 bg-white px-3 text-sm outline-none focus:border-unn-gold"
+            >
+              <option value="">Select faculty</option>
+              {facultyOptions.map((faculty) => (
+                <option key={faculty} value={faculty}>
+                  {faculty}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm sm:col-span-2">
+            Department
+            <select
+              required
+              disabled={!form.faculty}
+              value={form.department}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, department: event.target.value }))
+              }
+              className="mt-1.5 h-11 w-full rounded-xl border border-unn-green/15 bg-white px-3 text-sm outline-none focus:border-unn-gold disabled:opacity-60"
+            >
+              <option value="">
+                {form.faculty ? "Select department" : "Select a faculty first"}
+              </option>
+              {departments.map((department) => (
+                <option key={department} value={department}>
+                  {department}
+                </option>
+              ))}
+            </select>
           </label>
           <div className="sm:col-span-2">
             <label htmlFor={passwordId} className="block text-sm">

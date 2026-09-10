@@ -38,6 +38,8 @@ function emptyForm(defaults?: {
     equipmentName: "",
     model: "",
     make: "",
+    contactPerson: "",
+    contactPhone: "",
     location: "",
     condition: "Available" as (typeof equipmentConditions)[number],
   };
@@ -115,6 +117,8 @@ export function AddResearchModal({
         name: form.equipmentName.trim(),
         model: form.model.trim(),
         make: form.make.trim(),
+        contactPerson: form.contactPerson.trim(),
+        contactPhone: form.contactPhone.trim(),
         location: form.location.trim(),
         condition: form.condition,
       },
@@ -344,6 +348,29 @@ export function AddResearchModal({
                   onChange={(event) => setForm((current) => ({ ...current, make: event.target.value }))}
                   className={inputClass}
                   placeholder="JEOL"
+                />
+              </label>
+              <label className="block text-sm">
+                Contact person
+                <input
+                  value={form.contactPerson}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, contactPerson: event.target.value }))
+                  }
+                  className={inputClass}
+                  placeholder="Dr. Ada Okeke"
+                />
+              </label>
+              <label className="block text-sm">
+                Contact phone no
+                <input
+                  type="tel"
+                  value={form.contactPhone}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, contactPhone: event.target.value }))
+                  }
+                  className={inputClass}
+                  placeholder="+234 803 000 0000"
                 />
               </label>
               <label className="block text-sm">

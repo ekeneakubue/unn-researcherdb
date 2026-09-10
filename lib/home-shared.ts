@@ -34,6 +34,8 @@ export type HomeResearchDetail = {
     name: string;
     model: string;
     make: string;
+    contactPerson: string;
+    contactPhone: string;
     location: string;
     condition: string;
   }>;

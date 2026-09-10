@@ -71,6 +71,7 @@ export function toAdminResearcherRow(
     name: researcher.name,
     email: researcher.email,
     faculty: researcher.faculty,
+    department: researcher.department ?? "",
     projects: projectCounts.get(normalizeName(researcher.name)) ?? 0,
     status: statusLabels[researcher.status],
   };
@@ -108,6 +109,7 @@ export async function createResearcherAccount(input: ResearcherSignupInput) {
       email: input.email.trim().toLowerCase(),
       passwordHash: hashPassword(input.password),
       faculty: input.faculty.trim(),
+      department: input.department.trim() || null,
       status: "ACTIVE",
     },
     select: {
@@ -116,6 +118,7 @@ export async function createResearcherAccount(input: ResearcherSignupInput) {
       name: true,
       email: true,
       faculty: true,
+      department: true,
     },
   });
 }
@@ -159,6 +162,7 @@ export async function updateAdminResearcher(
       name: input.name.trim(),
       email: input.email.trim().toLowerCase(),
       faculty: input.faculty.trim(),
+      department: input.department.trim() || null,
       status: statusValues[input.status],
       ...(password ? { passwordHash: hashPassword(password) } : {}),
     },

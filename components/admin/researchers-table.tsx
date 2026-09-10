@@ -7,15 +7,23 @@ import {
 } from "@/app/actions/admin/researchers";
 import { EditResearcherModal } from "@/components/admin/edit-researcher-modal";
 import { useServiceErrors } from "@/components/use-service-errors";
+import type { FacultyCatalog } from "@/lib/faculties-shared";
 import type { AdminResearcherRow, UpdateAdminResearcherInput } from "@/lib/researchers-shared";
+
+const emptyCatalog: FacultyCatalog = {
+  faculties: [],
+  departmentsByFaculty: {},
+};
 
 type ResearchersTableProps = {
   initialResearchers: AdminResearcherRow[];
+  catalog?: FacultyCatalog;
   showEdit?: boolean;
 };
 
 export function ResearchersTable({
   initialResearchers,
+  catalog = emptyCatalog,
   showEdit = false,
 }: ResearchersTableProps) {
   const [query, setQuery] = useState("");
@@ -34,6 +42,7 @@ export function ResearchersTable({
         person.name.toLowerCase().includes(needle) ||
         person.email.toLowerCase().includes(needle) ||
         person.faculty.toLowerCase().includes(needle) ||
+        person.department.toLowerCase().includes(needle) ||
         person.id.toLowerCase().includes(needle),
     );
   }, [query, researchers]);
@@ -123,7 +132,12 @@ export function ResearchersTable({
                   <p className="font-medium text-unn-ink">{person.name}</p>
                   <p className="text-xs text-unn-muted">{person.email}</p>
                 </td>
-                <td className="px-4 py-3">{person.faculty}</td>
+                <td className="px-4 py-3">
+                  <p className="text-unn-ink">{person.faculty}</p>
+                  {person.department ? (
+                    <p className="text-xs text-unn-muted">{person.department}</p>
+                  ) : null}
+                </td>
                 <td className="px-4 py-3">{person.projects}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -163,6 +177,7 @@ export function ResearchersTable({
         <EditResearcherModal
           open={editing !== null}
           researcher={editing}
+          catalog={catalog}
           saving={isPending}
           onClose={() => setEditing(null)}
           onSave={handleSave}

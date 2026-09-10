@@ -94,6 +94,8 @@ type ResearchWithDetails = Research & {
       name: string;
       model: string | null;
       make: string | null;
+      contactPerson: string | null;
+      contactPhone: string | null;
       location: string | null;
     };
   }>;
@@ -126,6 +128,8 @@ export function toAdminResearchDetail(research: ResearchWithDetails): AdminResea
       name: link.equipment.name,
       model: link.equipment.model ?? "",
       make: link.equipment.make ?? "",
+      contactPerson: link.equipment.contactPerson ?? "",
+      contactPhone: link.equipment.contactPhone ?? "",
       location: link.equipment.location ?? "",
       condition: equipmentConditionLabels[link.condition],
     })),
@@ -266,6 +270,8 @@ export async function createAdminResearch(
           name: input.equipment.name,
           model: input.equipment.model || null,
           make: input.equipment.make || null,
+          contactPerson: input.equipment.contactPerson || null,
+          contactPhone: input.equipment.contactPhone || null,
           location: input.equipment.location || null,
         },
       });

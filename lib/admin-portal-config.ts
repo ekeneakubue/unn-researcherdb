@@ -1,6 +1,7 @@
 export type AdminPortalVariant = "super-admin" | "admin";
 
 export type AdminPortalConfig = {
+  variant: AdminPortalVariant;
   basePath: string;
   portalLabel: string;
   userName: string;
@@ -32,6 +33,7 @@ export function mergePortalConfig(
 
 export const adminPortalConfigs: Record<AdminPortalVariant, AdminPortalConfig> = {
   "super-admin": {
+    variant: "super-admin",
     basePath: "/super-admin",
     portalLabel: "Super Admin",
     userName: "ORID Super Admin",
@@ -39,6 +41,7 @@ export const adminPortalConfigs: Record<AdminPortalVariant, AdminPortalConfig> =
     userInitials: "SA",
   },
   admin: {
+    variant: "admin",
     basePath: "/admin",
     portalLabel: "Admin",
     userName: "ORID Admin",
@@ -53,7 +56,7 @@ export type AdminNavItem = {
   segment: string;
 };
 
-const navSegments = [
+const sharedNavSegments = [
   { segment: "", label: "Overview" },
   { segment: "users", label: "Users" },
   { segment: "research", label: "Research" },
@@ -62,8 +65,23 @@ const navSegments = [
   { segment: "settings", label: "Settings" },
 ] as const;
 
+const superAdminNavInsert = [
+  { segment: "faculties", label: "Faculties" },
+  { segment: "departments", label: "Departments" },
+] as const;
+
 export function getAdminNav(config: AdminPortalConfig): AdminNavItem[] {
-  return navSegments.map(({ segment, label }) => ({
+  const segments =
+    config.variant === "super-admin"
+      ? [
+          sharedNavSegments[0],
+          sharedNavSegments[1],
+          ...superAdminNavInsert,
+          ...sharedNavSegments.slice(2),
+        ]
+      : [...sharedNavSegments];
+
+  return segments.map(({ segment, label }) => ({
     segment,
     label,
     href: segment ? `${config.basePath}/${segment}` : config.basePath,
