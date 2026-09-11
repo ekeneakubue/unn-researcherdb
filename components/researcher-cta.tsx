@@ -56,8 +56,8 @@ export function ResearcherCta({ catalog }: ResearcherCtaProps) {
 
       setForm(emptyForm);
       setShowPassword(false);
-      router.push(result.redirectTo);
       router.refresh();
+      router.push(result.redirectTo);
     });
   }
 

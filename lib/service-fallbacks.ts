@@ -29,5 +29,6 @@ export function researcherProfileFallback(session: ResearcherSession): Researche
     department: "",
     status: "—",
     memberSince: "—",
+    photoUrl: null,
   };
 }

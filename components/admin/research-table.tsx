@@ -7,18 +7,26 @@ import { ResearchCsvToolbar } from "@/components/admin/research-csv-toolbar";
 import { ResearchDetailModal } from "@/components/admin/research-detail-modal";
 import { researchStatusStyles, StatusBadge } from "@/components/admin/status-badge";
 import { useServiceErrors } from "@/components/use-service-errors";
+import type { FacultyCatalog } from "@/lib/faculties-shared";
 import type { AdminResearchDetail, AdminResearchRow, ResearchStatusLabel } from "@/lib/research-shared";
 
 const statuses = ["All", "Active", "Recruiting", "Under review", "Completed"] as const;
 
+const emptyCatalog: FacultyCatalog = {
+  faculties: [],
+  departmentsByFaculty: {},
+};
+
 type ResearchTableProps = {
   initialProjects: AdminResearchRow[];
+  catalog?: FacultyCatalog;
   showCsvImport?: boolean;
   showDelete?: boolean;
 };
 
 export function ResearchTable({
   initialProjects,
+  catalog = emptyCatalog,
   showCsvImport = false,
   showDelete = false,
 }: ResearchTableProps) {
@@ -260,10 +268,11 @@ export function ResearchTable({
 
       <AddResearchModal
         open={adding}
+        catalog={catalog}
         onClose={() => setAdding(false)}
-        onCreate={(research) => {
+        onCreate={(research, files) => {
           startTransition(async () => {
-            const result = await createResearchAction(research);
+            const result = await createResearchAction(research, files);
             if (!result.ok) {
               reportErrors(result.errors);
               return;

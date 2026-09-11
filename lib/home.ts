@@ -137,6 +137,8 @@ export async function getHomeResearchDetail(
     researchOutput: outputLabels[research.researchOutput],
     funding: research.funding,
     status: statusLabels[research.status],
+    documentUrl: research.documentUrl,
+    documentName: research.documentName,
     equipment: research.equipmentLinks.map((link) => ({
       name: link.equipment.name,
       model: link.equipment.model ?? "",
@@ -145,6 +147,7 @@ export async function getHomeResearchDetail(
       contactPhone: link.equipment.contactPhone ?? "",
       location: link.equipment.location ?? "",
       condition: equipmentConditionLabels[link.condition],
+      photoUrl: link.equipment.photoUrl,
     })),
   };
 }
@@ -179,6 +182,7 @@ export async function getHomeEquipmentDetail(
     availabilityNote: item.availabilityNote ?? availabilityWindowFallback[item.availability],
     condition: equipmentConditionLabels[item.condition],
     custodian: item.custodian?.name ?? "—",
+    photoUrl: item.photoUrl,
     linkedResearch: item.researchLinks.map((link) => link.research.title),
   };
 }

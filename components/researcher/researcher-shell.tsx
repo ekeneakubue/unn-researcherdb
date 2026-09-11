@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -19,6 +20,7 @@ const ResearcherPortalContext = createContext<ResearcherProfileContext>({
   faculty: "",
   reference: null,
   initials: "R",
+  photoUrl: null,
 });
 
 export function ResearcherPortalProvider({
@@ -173,9 +175,19 @@ export function ResearcherTopbar() {
           <span className="block font-medium text-unn-ink">{profile.name}</span>
           <span className="text-xs text-unn-muted">{profile.email}</span>
         </p>
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-unn-green font-serif text-sm text-unn-gold-soft">
-          {profile.initials}
-        </span>
+        {profile.photoUrl ? (
+          <Image
+            src={profile.photoUrl}
+            alt={profile.name}
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-full object-cover ring-1 ring-unn-green/15"
+          />
+        ) : (
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-unn-green font-serif text-sm text-unn-gold-soft">
+            {profile.initials}
+          </span>
+        )}
       </div>
     </header>
   );

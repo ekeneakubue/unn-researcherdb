@@ -12,6 +12,7 @@ export type ResearcherProfileContext = {
   faculty: string;
   reference: string | null;
   initials: string;
+  photoUrl: string | null;
 };
 
 export function buildResearcherProfileContext(profile: {
@@ -19,9 +20,11 @@ export function buildResearcherProfileContext(profile: {
   email: string;
   faculty: string;
   reference: string | null;
+  photoUrl?: string | null;
 }): ResearcherProfileContext {
   return {
     ...profile,
+    photoUrl: profile.photoUrl ?? null,
     initials: getNameInitials(profile.name),
   };
 }

@@ -30,7 +30,7 @@ type EditEquipmentModalProps = {
   open: boolean;
   item: ResearcherEquipmentRow | null;
   onClose: () => void;
-  onSave: (input: UpdateResearcherEquipmentInput) => void;
+  onSave: (input: UpdateResearcherEquipmentInput, photoFile?: File | null) => void;
   saving?: boolean;
 };
 
@@ -44,6 +44,7 @@ export function EditEquipmentModal({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [form, setForm] = useState<UpdateResearcherEquipmentInput | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -51,9 +52,11 @@ export function EditEquipmentModal({
 
     if (open && item) {
       setForm(toForm(item));
+      setPhotoFile(null);
       if (!dialog.open) dialog.showModal();
     } else {
       setForm(null);
+      setPhotoFile(null);
       if (dialog.open) dialog.close();
     }
   }, [open, item]);
@@ -65,7 +68,7 @@ export function EditEquipmentModal({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form) return;
-    onSave(form);
+    onSave(form, photoFile);
   }
 
   if (!form) return null;
@@ -124,6 +127,26 @@ export function EditEquipmentModal({
                 onChange={(event) => setForm((current) => current && { ...current, make: event.target.value })}
                 className={inputClass}
               />
+            </label>
+            <label className="block text-sm sm:col-span-2">
+              Equipment photo
+              {item?.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.photoUrl}
+                  alt={item.name}
+                  className="mt-1.5 max-h-40 rounded-xl object-cover ring-1 ring-unn-green/10"
+                />
+              ) : null}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                onChange={(event) => setPhotoFile(event.target.files?.[0] ?? null)}
+                className={`${inputClass} mt-1.5 py-2 file:mr-3 file:rounded-full file:border-0 file:bg-unn-cream file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-unn-green`}
+              />
+              <span className="mt-1 block text-xs text-unn-muted">
+                Optional JPG/PNG/WebP (max 5MB). Stored in Cloudflare R2.
+              </span>
             </label>
             <label className="block text-sm">
               Lab

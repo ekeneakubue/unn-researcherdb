@@ -30,6 +30,8 @@ export type HomeResearchDetail = {
   researchOutput: string;
   funding: string;
   status: string;
+  documentUrl: string | null;
+  documentName: string | null;
   equipment: Array<{
     name: string;
     model: string;
@@ -38,6 +40,7 @@ export type HomeResearchDetail = {
     contactPhone: string;
     location: string;
     condition: string;
+    photoUrl: string | null;
   }>;
 };
 
@@ -61,5 +64,6 @@ export type HomeEquipmentDetail = {
   availabilityNote: string;
   condition: string;
   custodian: string;
+  photoUrl: string | null;
   linkedResearch: string[];
 };

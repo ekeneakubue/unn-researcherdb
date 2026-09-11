@@ -79,6 +79,16 @@ export function HomeEquipmentDetailModal({
             <p className="text-sm text-unn-muted">Loading equipment details…</p>
           ) : detail ? (
             <dl className="grid gap-4 sm:grid-cols-2">
+              {detail.photoUrl ? (
+                <div className="sm:col-span-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={detail.photoUrl}
+                    alt={detail.name}
+                    className="max-h-56 w-full rounded-xl object-cover ring-1 ring-unn-green/10"
+                  />
+                </div>
+              ) : null}
               <DetailField label="Model" value={detail.model} />
               <DetailField label="Make" value={detail.make} />
               <DetailField label="Laboratory" value={detail.lab} />

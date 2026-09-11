@@ -97,6 +97,7 @@ type ResearchWithDetails = Research & {
       contactPerson: string | null;
       contactPhone: string | null;
       location: string | null;
+      photoUrl: string | null;
     };
   }>;
 };
@@ -124,6 +125,8 @@ export function toAdminResearchDetail(research: ResearchWithDetails): AdminResea
     researchOutput: outputLabels[research.researchOutput],
     funding: research.funding,
     status: statusLabels[research.status],
+    documentUrl: research.documentUrl,
+    documentName: research.documentName,
     equipment: research.equipmentLinks.map((link) => ({
       name: link.equipment.name,
       model: link.equipment.model ?? "",
@@ -132,6 +135,7 @@ export function toAdminResearchDetail(research: ResearchWithDetails): AdminResea
       contactPhone: link.equipment.contactPhone ?? "",
       location: link.equipment.location ?? "",
       condition: equipmentConditionLabels[link.condition],
+      photoUrl: link.equipment.photoUrl,
     })),
   };
 }
@@ -247,6 +251,8 @@ export async function createAdminResearch(
         status: "UNDER_REVIEW",
         principalResearcherName: input.principalResearcher.trim(),
         principalResearcherEmail: input.principalResearcherEmail.trim() || null,
+        documentUrl: input.documentUrl?.trim() || null,
+        documentName: input.documentName?.trim() || null,
         collaborators: {
           create: input.collaborators.map((person, index) => ({
             name: person.name.trim(),
@@ -273,6 +279,7 @@ export async function createAdminResearch(
           contactPerson: input.equipment.contactPerson || null,
           contactPhone: input.equipment.contactPhone || null,
           location: input.equipment.location || null,
+          photoUrl: input.equipmentPhotoUrl?.trim() || null,
         },
       });
 

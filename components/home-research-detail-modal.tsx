@@ -105,6 +105,25 @@ export function HomeResearchDetailModal({
                   <DetailField label="Department" value={detail.department} className="sm:col-span-2" />
                   <DetailField label="Research output" value={detail.researchOutput} />
                   <DetailField label="Research funding" value={detail.funding} />
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs uppercase tracking-wider text-unn-muted">
+                      Research document
+                    </dt>
+                    <dd className="mt-1 text-sm text-unn-ink">
+                      {detail.documentUrl ? (
+                        <a
+                          href={detail.documentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-unn-green underline-offset-2 hover:underline"
+                        >
+                          {detail.documentName || "Open document"}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </dd>
+                  </div>
                 </dl>
               </section>
 
@@ -119,6 +138,16 @@ export function HomeResearchDetailModal({
                       >
                         <dl className="grid gap-3 sm:grid-cols-2">
                           <DetailField label="Equipment name" value={item.name} className="sm:col-span-2" />
+                          {item.photoUrl ? (
+                            <div className="sm:col-span-2">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.photoUrl}
+                                alt={item.name}
+                                className="max-h-48 rounded-xl object-cover ring-1 ring-unn-green/10"
+                              />
+                            </div>
+                          ) : null}
                           <DetailField label="Model" value={item.model || "—"} />
                           <DetailField label="Make" value={item.make || "—"} />
                           <DetailField label="Contact person" value={item.contactPerson || "—"} />

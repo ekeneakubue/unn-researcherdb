@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import type { NewResearch } from "@/lib/research-shared";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  departmentsForFaculty,
+  type FacultyCatalog,
+} from "@/lib/faculties-shared";
+import type { CreateResearchFiles, NewResearch } from "@/lib/research-shared";
 
 const inputClass =
   "mt-1.5 h-11 w-full rounded-xl border border-unn-green/15 bg-white px-3 text-sm outline-none focus:border-unn-gold";
@@ -20,6 +24,7 @@ function emptyForm(defaults?: {
   principalResearcher?: string;
   principalResearcherEmail?: string;
   faculty?: string;
+  department?: string;
 }) {
   return {
     title: "",
@@ -32,7 +37,7 @@ function emptyForm(defaults?: {
     collaborators: [{ id: "collaborator-0", name: "", email: "" }],
     researchArea: "",
     faculty: defaults?.faculty ?? "",
-    department: "",
+    department: defaults?.department ?? "",
     researchOutput: "Articles" as (typeof researchOutputs)[number],
     funding: "",
     equipmentName: "",
@@ -47,18 +52,21 @@ function emptyForm(defaults?: {
 
 type AddResearchModalProps = {
   open: boolean;
+  catalog: FacultyCatalog;
   onClose: () => void;
-  onCreate: (research: NewResearch) => void;
+  onCreate: (research: NewResearch, files?: CreateResearchFiles) => void;
   defaults?: {
     principalResearcher?: string;
     principalResearcherEmail?: string;
     faculty?: string;
+    department?: string;
   };
   lockPrincipalResearcher?: boolean;
 };
 
 export function AddResearchModal({
   open,
+  catalog,
   onClose,
   onCreate,
   defaults,
@@ -67,6 +75,27 @@ export function AddResearchModal({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [form, setForm] = useState(() => emptyForm(defaults));
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [equipmentPhotoFile, setEquipmentPhotoFile] = useState<File | null>(null);
+
+  const departments = useMemo(
+    () => departmentsForFaculty(catalog, form.faculty),
+    [catalog, form.faculty],
+  );
+
+  const facultyOptions = useMemo(() => {
+    if (form.faculty && !catalog.faculties.includes(form.faculty)) {
+      return [form.faculty, ...catalog.faculties];
+    }
+    return catalog.faculties;
+  }, [catalog.faculties, form.faculty]);
+
+  const departmentOptions = useMemo(() => {
+    if (form.department && !departments.includes(form.department)) {
+      return [form.department, ...departments];
+    }
+    return departments;
+  }, [departments, form.department]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -75,10 +104,14 @@ export function AddResearchModal({
     if (open) {
       if (!dialog.open) {
         setForm(emptyForm(defaults));
+        setDocumentFile(null);
+        setEquipmentPhotoFile(null);
         dialog.showModal();
       }
     } else {
       setForm(emptyForm(defaults));
+      setDocumentFile(null);
+      setEquipmentPhotoFile(null);
       if (dialog.open) dialog.close();
     }
   }, [open, defaults]);
@@ -89,40 +122,46 @@ export function AddResearchModal({
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onCreate({
-      title: form.title.trim(),
-      abstract: form.abstract.trim(),
-      startDate: form.startDate,
-      endDate: form.endDate,
-      principalResearcher: form.principalResearcher.trim(),
-      principalResearcherEmail: form.principalResearcherEmail.trim(),
-      coResearchers: form.coResearchers
-        .map((entry) => ({
-          name: entry.name.trim(),
-          email: entry.email.trim(),
-        }))
-        .filter((entry) => entry.name),
-      collaborators: form.collaborators
-        .map((entry) => ({
-          name: entry.name.trim(),
-          email: entry.email.trim(),
-        }))
-        .filter((entry) => entry.name),
-      researchArea: form.researchArea.trim(),
-      faculty: form.faculty.trim(),
-      department: form.department.trim(),
-      researchOutput: form.researchOutput,
-      funding: form.funding.trim(),
-      equipment: {
-        name: form.equipmentName.trim(),
-        model: form.model.trim(),
-        make: form.make.trim(),
-        contactPerson: form.contactPerson.trim(),
-        contactPhone: form.contactPhone.trim(),
-        location: form.location.trim(),
-        condition: form.condition,
+    onCreate(
+      {
+        title: form.title.trim(),
+        abstract: form.abstract.trim(),
+        startDate: form.startDate,
+        endDate: form.endDate,
+        principalResearcher: form.principalResearcher.trim(),
+        principalResearcherEmail: form.principalResearcherEmail.trim(),
+        coResearchers: form.coResearchers
+          .map((entry) => ({
+            name: entry.name.trim(),
+            email: entry.email.trim(),
+          }))
+          .filter((entry) => entry.name),
+        collaborators: form.collaborators
+          .map((entry) => ({
+            name: entry.name.trim(),
+            email: entry.email.trim(),
+          }))
+          .filter((entry) => entry.name),
+        researchArea: form.researchArea.trim(),
+        faculty: form.faculty.trim(),
+        department: form.department.trim(),
+        researchOutput: form.researchOutput,
+        funding: form.funding.trim(),
+        equipment: {
+          name: form.equipmentName.trim(),
+          model: form.model.trim(),
+          make: form.make.trim(),
+          contactPerson: form.contactPerson.trim(),
+          contactPhone: form.contactPhone.trim(),
+          location: form.location.trim(),
+          condition: form.condition,
+        },
       },
-    });
+      {
+        document: documentFile,
+        equipmentPhoto: equipmentPhotoFile,
+      },
+    );
     onClose();
   }
 
@@ -266,25 +305,46 @@ export function AddResearchModal({
               </label>
               <label className="block text-sm">
                 Faculty/Center/Institute
-                <input
+                <select
                   required
                   value={form.faculty}
-                  onChange={(event) => setForm((current) => ({ ...current, faculty: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      faculty: event.target.value,
+                      department: "",
+                    }))
+                  }
                   className={inputClass}
-                  placeholder="Faculty of Agriculture"
-                />
+                >
+                  <option value="">Select faculty/center/institute</option>
+                  {facultyOptions.map((faculty) => (
+                    <option key={faculty} value={faculty}>
+                      {faculty}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="block text-sm sm:col-span-2">
                 Department
-                <input
+                <select
                   required
+                  disabled={!form.faculty}
                   value={form.department}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, department: event.target.value }))
                   }
-                  className={inputClass}
-                  placeholder="Dept. of Crop Science"
-                />
+                  className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  <option value="">
+                    {form.faculty ? "Select department" : "Select a faculty first"}
+                  </option>
+                  {departmentOptions.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="block text-sm">
                 Research Output
@@ -313,6 +373,18 @@ export function AddResearchModal({
                   className={inputClass}
                   placeholder="TETFund NRF"
                 />
+              </label>
+              <label className="block text-sm sm:col-span-2">
+                Research document
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
+                  className={`${inputClass} py-2 file:mr-3 file:rounded-full file:border-0 file:bg-unn-cream file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-unn-green`}
+                />
+                <span className="mt-1 block text-xs text-unn-muted">
+                  Optional PDF or Word document (max 15MB). Stored in Cloudflare R2.
+                </span>
               </label>
             </div>
           </section>
@@ -383,6 +455,18 @@ export function AddResearchModal({
                   className={inputClass}
                   placeholder="Central Research Laboratory"
                 />
+              </label>
+              <label className="block text-sm">
+                Equipment photo
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  onChange={(event) => setEquipmentPhotoFile(event.target.files?.[0] ?? null)}
+                  className={`${inputClass} py-2 file:mr-3 file:rounded-full file:border-0 file:bg-unn-cream file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-unn-green`}
+                />
+                <span className="mt-1 block text-xs text-unn-muted">
+                  Optional JPG/PNG/WebP (max 5MB). Stored in Cloudflare R2.
+                </span>
               </label>
               <label className="block text-sm">
                 Condition

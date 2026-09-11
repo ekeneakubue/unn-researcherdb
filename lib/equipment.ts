@@ -65,6 +65,7 @@ export function toAdminEquipmentRow(item: EquipmentWithCustodian): AdminEquipmen
     availability: availabilityLabels[item.availability],
     window: item.availabilityNote ?? availabilityWindowFallback[item.availability],
     custodian: item.custodian?.name ?? "—",
+    photoUrl: item.photoUrl,
   };
 }
 
@@ -147,6 +148,7 @@ export async function updateResearcherEquipment(
       availability: availabilityValues[input.availability],
       availabilityNote: input.availabilityNote.trim() || null,
       condition: conditionValues[input.condition],
+      ...(input.photoUrl !== undefined ? { photoUrl: input.photoUrl?.trim() || null } : {}),
     },
     include: { custodian: true },
   });
@@ -177,5 +179,6 @@ export function toResearcherEquipmentRow(
     condition: conditionLabels[item.condition],
     custodian: item.custodian?.name ?? "—",
     isCustodian: item.custodianId === researcherId,
+    photoUrl: item.photoUrl,
   };
 }

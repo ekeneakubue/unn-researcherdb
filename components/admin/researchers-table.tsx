@@ -5,6 +5,7 @@ import {
   deleteResearcherAction,
   updateResearcherAction,
 } from "@/app/actions/admin/researchers";
+import { ConfirmDeleteModal } from "@/components/admin/confirm-delete-modal";
 import { EditResearcherModal } from "@/components/admin/edit-researcher-modal";
 import { useServiceErrors } from "@/components/use-service-errors";
 import type { FacultyCatalog } from "@/lib/faculties-shared";
@@ -29,6 +30,9 @@ export function ResearchersTable({
   const [query, setQuery] = useState("");
   const [researchers, setResearchers] = useState(initialResearchers);
   const [editing, setEditing] = useState<AdminResearcherRow | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<AdminResearcherRow | null>(
+    null,
+  );
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { reportError, errorModal } = useServiceErrors();
   const [isPending, startTransition] = useTransition();
@@ -67,11 +71,6 @@ export function ResearchersTable({
   }
 
   function handleDelete(person: AdminResearcherRow) {
-    const confirmed = window.confirm(
-      `Delete ${person.name}? This removes their portal account and cannot be undone.`,
-    );
-    if (!confirmed) return;
-
     setDeletingId(person.id);
 
     startTransition(async () => {
@@ -85,6 +84,7 @@ export function ResearchersTable({
 
       setResearchers((current) => current.filter((item) => item.id !== person.id));
       setDeletingId(null);
+      setConfirmingDelete(null);
     });
   }
 
@@ -154,7 +154,7 @@ export function ResearchersTable({
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => handleDelete(person)}
+                      onClick={() => setConfirmingDelete(person)}
                       disabled={isPending && deletingId === person.id}
                       className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
                     >
@@ -183,6 +183,21 @@ export function ResearchersTable({
           onSave={handleSave}
         />
       ) : null}
+
+      <ConfirmDeleteModal
+        open={confirmingDelete !== null}
+        title="Delete researcher"
+        message={
+          confirmingDelete
+            ? `Delete ${confirmingDelete.name}? This removes their portal account and cannot be undone.`
+            : ""
+        }
+        pending={isPending && deletingId === confirmingDelete?.id}
+        onClose={() => setConfirmingDelete(null)}
+        onConfirm={() => {
+          if (confirmingDelete) handleDelete(confirmingDelete);
+        }}
+      />
 
       {errorModal}
     </div>

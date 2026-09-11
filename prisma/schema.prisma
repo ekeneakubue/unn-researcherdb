@@ -48,6 +48,7 @@ model Researcher {
   passwordHash String?
   faculty      String
   department   String?
+  photoUrl     String?
   status       AccountStatus @default(ACTIVE)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -86,6 +87,8 @@ model Research {
   status                 ResearchStatus     @default(UNDER_REVIEW)
   principalResearcherName  String
   principalResearcherEmail String?
+  documentUrl            String?
+  documentName           String?
   createdAt                DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
@@ -146,6 +149,7 @@ model Equipment {
   location         String?
   contactPerson    String?
   contactPhone     String?
+  photoUrl         String?
   condition        EquipmentCondition    @default(AVAILABLE)
   availability     EquipmentAvailability @default(AVAILABLE)
   availabilityNote String?

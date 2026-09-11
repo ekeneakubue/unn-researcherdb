@@ -5,6 +5,7 @@ import { createResearcherResearchAction } from "@/app/actions/researcher/researc
 import { AddResearchModal } from "@/components/admin/add-research-modal";
 import { researchStatusStyles, StatusBadge } from "@/components/admin/status-badge";
 import { useServiceErrors } from "@/components/use-service-errors";
+import type { FacultyCatalog } from "@/lib/faculties-shared";
 import type { ResearcherProjectRow } from "@/lib/researcher-dashboard-shared";
 
 const statuses = ["All", "Active", "Recruiting", "Under review", "Completed"] as const;
@@ -14,6 +15,7 @@ type ResearcherResearchPanelProps = {
   researcherName: string;
   researcherEmail: string;
   researcherFaculty: string;
+  catalog: FacultyCatalog;
 };
 
 export function ResearcherResearchPanel({
@@ -21,6 +23,7 @@ export function ResearcherResearchPanel({
   researcherName,
   researcherEmail,
   researcherFaculty,
+  catalog,
 }: ResearcherResearchPanelProps) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<(typeof statuses)[number]>("All");
@@ -129,12 +132,13 @@ export function ResearcherResearchPanel({
 
       <AddResearchModal
         open={adding}
+        catalog={catalog}
         onClose={() => setAdding(false)}
         defaults={modalDefaults}
         lockPrincipalResearcher
-        onCreate={(research) => {
+        onCreate={(research, files) => {
           startTransition(async () => {
-            const result = await createResearcherResearchAction(research);
+            const result = await createResearcherResearchAction(research, files);
             if (!result.ok) {
               reportErrors(result.errors);
               return;

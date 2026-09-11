@@ -28,6 +28,11 @@ export type NewResearch = {
   };
 };
 
+export type CreateResearchFiles = {
+  document?: File | null;
+  equipmentPhoto?: File | null;
+};
+
 export type AdminResearchRow = {
   id: string;
   title: string;
@@ -55,6 +60,8 @@ export type AdminResearchDetail = {
   researchOutput: string;
   funding: string;
   status: string;
+  documentUrl: string | null;
+  documentName: string | null;
   equipment: Array<{
     name: string;
     model: string;
@@ -63,6 +70,7 @@ export type AdminResearchDetail = {
     contactPhone: string;
     location: string;
     condition: string;
+    photoUrl: string | null;
   }>;
 };
 
@@ -75,4 +83,8 @@ export const researchStatusOptions = [
 
 export type ResearchStatusLabel = (typeof researchStatusOptions)[number];
 
-export type CreateAdminResearchInput = NewResearch;
+export type CreateAdminResearchInput = NewResearch & {
+  documentUrl?: string | null;
+  documentName?: string | null;
+  equipmentPhotoUrl?: string | null;
+};

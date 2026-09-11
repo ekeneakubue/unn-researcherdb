@@ -22,6 +22,7 @@ export type ResearcherEquipmentRow = {
   condition: string;
   custodian: string;
   isCustodian: boolean;
+  photoUrl: string | null;
 };
 
 export type ResearcherProfile = {
@@ -32,6 +33,7 @@ export type ResearcherProfile = {
   department: string;
   status: string;
   memberSince: string;
+  photoUrl: string | null;
 };
 
 export type ResearcherOverviewData = {

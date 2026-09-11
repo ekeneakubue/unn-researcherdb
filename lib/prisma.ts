@@ -1,8 +1,16 @@
 import "server-only";
 
+import dns from "node:dns";
+import net from "node:net";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import { PrismaClient } from "@/lib/generated/prisma/client";
+
+// Neon resolves to both A and AAAA records. On networks without IPv6 routing the
+// happy-eyeballs attempt fails and node reports the whole connect as ETIMEDOUT,
+// so pin lookups to IPv4 and connect to a single address.
+dns.setDefaultResultOrder("ipv4first");
+net.setDefaultAutoSelectFamily(false);
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -37,8 +45,8 @@ function createPrismaClient() {
     globalForPrisma.pool ??
     new pg.Pool({
       connectionString,
-      // Neon pooler: fail fast so pages can show the connection modal instead of hanging.
-      connectionTimeoutMillis: 8_000,
+      // Neon autosuspend wake can exceed 8s; align with URL connect_timeout.
+      connectionTimeoutMillis: 60_000,
       idleTimeoutMillis: 20_000,
       max: 5,
     });

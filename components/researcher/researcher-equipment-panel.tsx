@@ -33,11 +33,11 @@ export function ResearcherEquipmentPanel({ items: initialItems }: { items: Resea
     });
   }, [query, availability, items]);
 
-  function handleSave(input: UpdateResearcherEquipmentInput) {
+  function handleSave(input: UpdateResearcherEquipmentInput, photoFile?: File | null) {
     if (!editing) return;
 
     startTransition(async () => {
-      const result = await updateResearcherEquipmentAction(editing.id, input);
+      const result = await updateResearcherEquipmentAction(editing.id, input, photoFile);
       if (!result.ok) {
         reportErrors(result.errors);
         return;

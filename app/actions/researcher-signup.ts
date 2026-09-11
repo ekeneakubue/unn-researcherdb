@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { setResearcherSession } from "@/lib/auth/researcher-session";
 import { Prisma } from "@/lib/generated/prisma/client";
+import { clearResearcherSession } from "@/lib/auth/researcher-session";
 import { toServiceError } from "@/lib/service-error";
 import { createResearcherAccount } from "@/lib/researchers";
 import type { ResearcherSignupInput } from "@/lib/researchers-shared";
@@ -30,18 +30,14 @@ export async function registerResearcherAction(
   try {
     const researcher = await createResearcherAccount(input);
 
-    await setResearcherSession({
-      researcherId: researcher.id,
-      email: researcher.email,
-      name: researcher.name,
-      faculty: researcher.faculty,
-      reference: researcher.reference,
-    });
+    // Otherwise a previously signed-in researcher's session sends the new
+    // account straight past /researcher/login into that researcher's portal.
+    await clearResearcherSession();
 
     revalidatePath("/");
     revalidateAdminSections("researchers");
 
-    return { ok: true, researcher, redirectTo: "/researcher" };
+    return { ok: true, researcher, redirectTo: "/researcher/login" };
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

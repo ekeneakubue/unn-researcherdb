@@ -58,6 +58,7 @@ function toEquipmentRow(
     availability: EquipmentAvailability;
     availabilityNote: string | null;
     condition: EquipmentCondition;
+    photoUrl: string | null;
     custodian: { name: string } | null;
     custodianId: string | null;
   },
@@ -76,6 +77,7 @@ function toEquipmentRow(
     condition: conditionLabels[item.condition],
     custodian: item.custodian?.name ?? "—",
     isCustodian: item.custodianId === researcherId,
+    photoUrl: item.photoUrl,
   };
 }
 
@@ -167,6 +169,7 @@ export async function getResearcherProfile(
       month: "long",
       year: "numeric",
     }),
+    photoUrl: researcher.photoUrl,
   };
 }
 

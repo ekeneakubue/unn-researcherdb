@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { ResearcherLayout } from "@/components/researcher/researcher-layout";
 import { requireResearcherSession } from "@/lib/auth/require-researcher";
+import { prisma } from "@/lib/prisma";
 import { buildResearcherProfileContext } from "@/lib/researcher-portal-config";
+import { logServiceFailure } from "@/lib/service-error";
 
 export const metadata: Metadata = {
   title: "Researcher — UNN Research",
@@ -15,6 +17,18 @@ export default async function ResearcherPortalLayout({
 }) {
   const session = await requireResearcherSession();
 
+  let photoUrl: string | null = null;
+  try {
+    const researcher = await prisma.researcher.findUnique({
+      where: { id: session.researcherId },
+      select: { photoUrl: true },
+    });
+    photoUrl = researcher?.photoUrl ?? null;
+  } catch (error) {
+    // Don't take down the whole portal when Neon is cold/unreachable.
+    logServiceFailure("Researcher photo", error);
+  }
+
   return (
     <ResearcherLayout
       profile={buildResearcherProfileContext({
@@ -22,6 +36,7 @@ export default async function ResearcherPortalLayout({
         email: session.email,
         faculty: session.faculty,
         reference: session.reference,
+        photoUrl,
       })}
     >
       {children}

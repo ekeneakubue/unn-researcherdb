@@ -6,6 +6,7 @@ export type AdminEquipmentRow = {
   availability: string;
   window: string;
   custodian: string;
+  photoUrl: string | null;
 };
 
 export const equipmentAvailabilityOptions = [
@@ -33,4 +34,5 @@ export type UpdateResearcherEquipmentInput = {
   availability: EquipmentAvailabilityLabel;
   availabilityNote: string;
   condition: EquipmentConditionLabel;
+  photoUrl?: string | null;
 };
